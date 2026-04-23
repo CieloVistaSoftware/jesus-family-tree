@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Runtime / tooling
+.DS_Store
+Thumbs.db
+*.log
+
+# Editor
+.vscode/
+.idea/
+
+# Test output
+coverage/
+test-results/
+playwright-report/

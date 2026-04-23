@@ -1,0 +1,11 @@
+{
+  "name": "jesus-family-tree",
+  "version": "0.1.0",
+  "description": "Interactive biblical genealogy visualization website",
+  "private": true,
+  "license": "PROPRIETARY",
+  "scripts": {
+    "start": "npx serve .",
+    "test": "echo \"No automated test runner configured\""
+  }
+}
