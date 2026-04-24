@@ -9,14 +9,12 @@
 - Kanban board (#5): https://github.com/users/CieloVistaSoftware/projects/5
 
 ### Last action
-Scroll fix for the Navigator click shipped in commit `cc0551f` — issue #6 auto-closed on push. `gotoIdx` now sets `scrollLeft = clamp(bxC * zoom, 0, maxScrollLeft)` instead of hard-coding 0, so the bar for the selected person is placed as far left as possible in chart-outer. All callers benefit: bar click, nav click, tour, keyboard, drawer row click, inline person-link. May partially or fully resolve issue #1 (Lamech scroll) as a side effect — worth re-testing.
-
-Earlier this session: drawer replacement for Open All (commit `8be8d39`, retroactively filed as issue #5 and closed).
+Shipped #10 (commit `7aaa57c`): top-align + white border + shared screen-Y reference across all three panels. `alignToTop` now uses `outer.top + REM` (chart-outer's top plus one rem) as the common anchor for nav-list, chart, and drawer-list — so the selected entry's top edge lands at the same absolute screen Y in all three columns. CSS for `.nav-item.active` and `.all-drawer-item.selected` flipped gold → white to match the chart bar's selection glow. Also folded in the drawer-click unification (closed #8) — drawer rows now route through `gotoIdx` and the old `gotoIdxFromDrawer` helper is gone.
 
 ### Next step
-1. Reload live site — click several Navigator items across the timeline (Adam, David, Josiah, Jesus) and confirm each bar lands flush-left in chart-outer.
-2. Re-check issue #1 (Lamech) — likely resolved by #6 fix; close or keep open based on live check.
-3. Then tackle issue #2 (regression baseline) — still unstarted, still the highest-leverage next move since we are shipping blind.
+1. Reload live site and click across multiple persons (Seth, Arphaxad, David, Jesus) — confirm all three highlighted entries land at the same screen Y and the white glow reads cleanly in each panel.
+2. Revisit #1 (Lamech scroll) — likely fully resolved by #6 + #7 + #10 cumulatively; close if verified.
+3. Still pending: #2 (regression baseline) — remains the highest-leverage next move since we keep shipping blind.
 
 ## Locked decisions
 - **Old URL**: Let `https://cielovistasoftware.github.io/one-electron-universe/JesusFamilyTree/` die on next one-electron-universe deploy. No redirect.
