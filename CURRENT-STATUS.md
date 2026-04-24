@@ -9,11 +9,14 @@
 - Kanban board (#5): https://github.com/users/CieloVistaSoftware/projects/5
 
 ### Last action
-Replaced "Open All" spatial-cards feature with a right-side drawer holding a scrollable list of all 77 people (commit 8be8d39). Cards no longer stack or clip — the drawer is the single source of full detail while open. Click any drawer row to find that person on the tree. All selection paths (bar click, nav panel, keyboard, tour, inline link, drawer click) now sync the drawer highlight and hide the inline tooltip when the drawer is open.
+Scroll fix for the Navigator click shipped in commit `cc0551f` — issue #6 auto-closed on push. `gotoIdx` now sets `scrollLeft = clamp(bxC * zoom, 0, maxScrollLeft)` instead of hard-coding 0, so the bar for the selected person is placed as far left as possible in chart-outer. All callers benefit: bar click, nav click, tour, keyboard, drawer row click, inline person-link. May partially or fully resolve issue #1 (Lamech scroll) as a side effect — worth re-testing.
+
+Earlier this session: drawer replacement for Open All (commit `8be8d39`, retroactively filed as issue #5 and closed).
 
 ### Next step
-1. Reload the live site and sanity-check the drawer visually (slide-in, close button, click-to-find, scroll-sync, esc to close).
-2. Then tackle issue #2 (regression baseline) — any existing Playwright tests referencing `.open-all-card` will fail and need updating; more importantly, we still don't have a trusted test baseline to catch behavioral regressions before they're shipped.
+1. Reload live site — click several Navigator items across the timeline (Adam, David, Josiah, Jesus) and confirm each bar lands flush-left in chart-outer.
+2. Re-check issue #1 (Lamech) — likely resolved by #6 fix; close or keep open based on live check.
+3. Then tackle issue #2 (regression baseline) — still unstarted, still the highest-leverage next move since we are shipping blind.
 
 ## Locked decisions
 - **Old URL**: Let `https://cielovistasoftware.github.io/one-electron-universe/JesusFamilyTree/` die on next one-electron-universe deploy. No redirect.
