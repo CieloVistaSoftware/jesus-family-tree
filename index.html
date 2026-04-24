@@ -92,7 +92,7 @@ footer{text-align:center;margin-top:36px;padding:18px;border-top:1px solid #1418
 .all-drawer-list::-webkit-scrollbar-thumb{background:#252d48;border-radius:3px}
 .all-drawer-item{padding:13px 16px;border-bottom:1px solid #1a2030;border-left:4px solid #2a3458;cursor:pointer;font-size:12px;line-height:1.65;transition:background .12s}
 .all-drawer-item:hover{background:#101523}
-.all-drawer-item.selected{background:rgba(255,208,64,0.06);border-left-color:#FFD040!important}
+.all-drawer-item.selected{background:rgba(255,208,64,0.06);border-left-color:#FFD040!important;box-shadow:inset 0 0 0 1px #FFD040,0 0 10px rgba(255,208,64,0.35)}
 /* ── Navigator + two-column layout ── */
 #app-layout{display:flex;align-items:stretch;gap:0;}
 #nav-panel{width:190px;min-width:150px;flex-shrink:0;display:flex;flex-direction:column;background:#0a0d18;border-right:1px solid #1a2030;height:calc(100vh - 180px);}
@@ -104,7 +104,7 @@ footer{text-align:center;margin-top:36px;padding:18px;border-top:1px solid #1418
 #nav-list::-webkit-scrollbar-track{background:#080a10;}
 #nav-list::-webkit-scrollbar-thumb{background:#252d48;border-radius:2px;}
 .nav-item{padding:5px 10px 5px 12px;cursor:pointer;display:flex;flex-direction:column;gap:1px;border-left:2px solid transparent;transition:background .1s;}
-.nav-item:hover{background:#111828;}.nav-item.active{background:#141a2e;border-left-color:#e8a030;}
+.nav-item:hover{background:#111828;}.nav-item.active{background:#141a2e;border-left-color:#FFD040;box-shadow:inset 0 0 0 1px #FFD040,0 0 10px rgba(255,208,64,0.35);}
 .nav-item-name{font-size:12px;font-weight:600;color:#c4cad8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .nav-item.active .nav-item-name{color:#f5ecd4;}.nav-item-date{font-size:10px;color:#404868;}
 #chart-col{flex:1;min-width:0;}
@@ -1228,12 +1228,11 @@ function gotoIdx(idx,_showTip){
   const ryC = getRowY(idx);
 
   // scrollLeft: put the bar as far left as possible in chart-outer, clamped into canvas bounds.
-  // This loses the name-column for mid/late people, but the Navigator panel already shows names.
-  // scrollTop: center the selected row vertically in the viewport ("name center screen").
-  const centeredTop = ryC * zoom - (outer.clientHeight / 2) + (ROW * zoom / 2);
+  // scrollTop: top-align the selected row (row top near chart-outer top, with small padding).
+  const topAligned = ryC * zoom - REM;
   const maxScrollLeft = outer.scrollWidth - outer.clientWidth;
   const newScrollLeft = Math.max(0, Math.min(bxC * zoom, maxScrollLeft));
-  const newScrollTop  = Math.max(0, Math.min(centeredTop, outer.scrollHeight - outer.clientHeight));
+  const newScrollTop  = Math.max(0, Math.min(topAligned, outer.scrollHeight - outer.clientHeight));
 
   // Set scroll synchronously and kill RAF animator so it doesn't fight us
   outer.scrollLeft = newScrollLeft;
@@ -1266,12 +1265,10 @@ function gotoIdx(idx,_showTip){
   // Tooltip position
   const outerRect = outer.getBoundingClientRect();
 
-  // Bar is now vertically centered in container.
-  // Bar screen top = outerTop + clientHeight/2 - ROW*zoom/2
-  // Bar screen bottom = outerTop + clientHeight/2 + ROW*zoom/2
-  // Tooltip: 1rem below bar bottom, clamped into viewport.
+  // Tooltip position — bar is now top-aligned (row top at outer.top + REM).
+  // Place tooltip just below the bar bottom, clamped into viewport.
   let tx = outerRect.left + REM;
-  const barScreenBottom = outerRect.top + outer.clientHeight / 2 + ROW * zoom / 2;
+  const barScreenBottom = outerRect.top + REM + ROW * zoom;
   let ty = barScreenBottom + REM;
   if(tx + TIP_W > window.innerWidth  - REM) tx = window.innerWidth  - TIP_W - REM;
   if(tx < REM) tx = REM;
@@ -1312,7 +1309,7 @@ function repositionTip(){
   const TIP_W = 360, TIP_H = tip.offsetHeight || 460;
   const outerRect = outer.getBoundingClientRect();
   let tx = outerRect.left + REM;
-  let ty = outerRect.top + outer.clientHeight / 2 + ROW * zoom / 2 + REM;
+  let ty = outerRect.top + REM + ROW * zoom + REM;
   if(tx + TIP_W > window.innerWidth  - REM) tx = window.innerWidth  - TIP_W - REM;
   if(tx < REM) tx = REM;
   if(ty + TIP_H > window.innerHeight - REM) ty = window.innerHeight - TIP_H - REM;
@@ -1470,7 +1467,7 @@ function openAllCards(){
     // Click anywhere on item (except real interactive content) → jump to this person
     item.addEventListener('click', e => {
       if(e.target.closest('a,button,span.np')) return;
-      gotoIdxFromDrawer(idx,item);
+      gotoIdx(idx);
     });
 
     list.appendChild(item);
@@ -1499,62 +1496,24 @@ function _syncDrawerHighlight(idx){
   if(item){
     item.classList.add('selected');
     const list = _drawer.querySelector('.all-drawer-list');
-    alignToChartCenter(list, item, true);
+    alignToTop(list, item, true);
   }
-}
-
-function gotoIdxFromDrawer(idx, sourceEl){
-  idx=Math.max(0,Math.min(people.length-1,idx));
-  const p=people[idx];
-  const REM=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;
-  const bxC=Math.max(yx(p.b),LPAD);
-  const ryC=getRowY(idx);
-
-  const outerRect=outer.getBoundingClientRect();
-  const srcRect=sourceEl.getBoundingClientRect();
-
-  // Align selected row to the same on-screen Y position as the clicked drawer entry.
-  const srcMid=srcRect.top+(srcRect.height/2);
-  let targetRowTop=(srcMid-outerRect.top)-(ROW*zoom/2);
-  const maxRowTop=Math.max(REM, outer.clientHeight-(ROW*zoom)-REM);
-  targetRowTop=Math.max(REM,Math.min(targetRowTop,maxRowTop));
-
-  const maxScrollLeft=outer.scrollWidth-outer.clientWidth;
-  const maxScrollTop=outer.scrollHeight-outer.clientHeight;
-  const newScrollLeft=Math.max(0,Math.min((bxC*zoom)-REM,maxScrollLeft));
-  const newScrollTop=Math.max(0,Math.min((ryC*zoom)-targetRowTop,maxScrollTop));
-
-  outer.scrollLeft=newScrollLeft;
-  outer.scrollTop=newScrollTop;
-  _stX=newScrollLeft;
-  _stY=newScrollTop;
-  _prevScrollTop2=newScrollTop;
-
-  selectedIdx=idx;
-  _scrollTipRow=idx;
-  _tipDragged=false;
-  visibleTipRow=idx;
-  draw();
-  hideTip();
-  navScrollTo(idx);
-  if(_drawer) _syncDrawerHighlight(idx);
-  if(isMobile) mobNavUpdate(idx);
 }
 
 const openAllBtnEl=document.getElementById('open-all-btn');
 if(isMobile){openAllBtnEl.style.display='none';}else{openAllBtnEl.addEventListener('click',openAllCards);}
 
 // ── Navigator ─────────────────────────────────────────────────────────────────
-// Scroll `container` so that `item` (a descendant) has its vertical center
-// at the same screen y as chart-outer's vertical center. Used to align the
-// selected entry across Navigator (left), chart (main), and drawer (right).
-function alignToChartCenter(container, item, smooth){
+// Scroll `container` so that `item` (a descendant) has its top edge at
+// container.top + small padding. Used to top-align the selected entry across
+// Navigator (left), chart (main), and drawer (right).
+function alignToTop(container, item, smooth){
   if(!container || !item) return;
-  const chartRect = outer.getBoundingClientRect();
-  const targetScreenY = chartRect.top + chartRect.height / 2;
+  const PADDING = 8;
+  const containerRect = container.getBoundingClientRect();
   const itemRect = item.getBoundingClientRect();
-  const currentItemCenterY = itemRect.top + itemRect.height / 2;
-  const delta = currentItemCenterY - targetScreenY;
+  const currentItemTopInContainer = itemRect.top - containerRect.top;
+  const delta = currentItemTopInContainer - PADDING;
   const target = container.scrollTop + delta;
   const max = container.scrollHeight - container.clientHeight;
   const clamped = Math.max(0, Math.min(target, max));
@@ -1572,7 +1531,7 @@ function navScrollTo(idx){
   if(idx>=0){
     const navList = document.getElementById('nav-list');
     const activeEl = navList.querySelector('.nav-item.active');
-    if(activeEl) alignToChartCenter(navList, activeEl, true);
+    if(activeEl) alignToTop(navList, activeEl, true);
   }
 }
 
@@ -1597,31 +1556,7 @@ function navScrollTo(idx){
       dateDiv.textContent=fmtNavYear(p.b);
       item.appendChild(nameDiv);
       item.appendChild(dateDiv);
-      item.addEventListener('mouseenter',()=>{
-        clearTimeout(tipLeaveTimer);
-        buildTip(p);
-        const navRect=document.getElementById('nav-panel').getBoundingClientRect();
-        const itemRect=item.getBoundingClientRect();
-        tip.style.visibility='hidden';
-        tip.style.display='block';
-        const REM=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;
-        const TIP_W=360;
-        const actualH=tip.offsetHeight||400;
-        let tx=navRect.right+8;
-        let ty=itemRect.top;
-        if(tx+TIP_W>window.innerWidth-REM) tx=window.innerWidth-TIP_W-REM;
-        if(tx<REM) tx=REM;
-        if(ty+actualH>window.innerHeight-REM) ty=window.innerHeight-actualH-REM;
-        if(ty<REM) ty=REM;
-        tip.style.left=tx+'px';
-        tip.style.top=ty+'px';
-        tip.style.zIndex='999';
-        _tipDragged=true; // prevent repositionTip from moving this nav-triggered tip
-        tip.style.visibility='';
-        visibleTipRow=i;
-        lastRow=i;
-      });
-      item.addEventListener('mouseleave',()=>{ hideTipSoon(); });
+      // Hover tooltip removed — the drawer is the detail view now.
       item.addEventListener('click',()=>{ hideTip(); gotoIdx(i); });
       navListEl.appendChild(item);
     });
