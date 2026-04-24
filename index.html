@@ -1218,10 +1218,12 @@ function gotoIdx(idx,_showTip){
   const bxC = Math.max(yx(p.b), LPAD);
   const ryC = getRowY(idx);
 
-  // scrollLeft = 0: keep name label column always visible in left of screen.
+  // scrollLeft: put the bar as far left as possible in chart-outer, clamped into canvas bounds.
+  // This loses the name-column for mid/late people, but the Navigator panel already shows names.
   // scrollTop: center the selected row vertically in the viewport ("name center screen").
   const centeredTop = ryC * zoom - (outer.clientHeight / 2) + (ROW * zoom / 2);
-  const newScrollLeft = 0;
+  const maxScrollLeft = outer.scrollWidth - outer.clientWidth;
+  const newScrollLeft = Math.max(0, Math.min(bxC * zoom, maxScrollLeft));
   const newScrollTop  = Math.max(0, Math.min(centeredTop, outer.scrollHeight - outer.clientHeight));
 
   // Set scroll synchronously and kill RAF animator so it doesn't fight us
@@ -1459,7 +1461,7 @@ function openAllCards(){
     // Click anywhere on item (except real interactive content) → jump to this person
     item.addEventListener('click', e => {
       if(e.target.closest('a,button,span.np')) return;
-      gotoIdx(idx);
+      gotoIdxFromDrawer(idx,item);
     });
 
     list.appendChild(item);
