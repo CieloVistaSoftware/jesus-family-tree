@@ -18,19 +18,13 @@ main{padding:0 16px}
 .sw{width:10px;height:10px;border-radius:2px;flex-shrink:0}
 .pan-bar{display:flex;align-items:center;gap:10px;margin:6px auto 8px;max-width:1100px}
 .pan-hint{font-size:11px;color:#303648;flex:1}
-.pan-btn{background:#141828;border:1px solid #252d48;color:#5060a0;padding:5px 16px;border-radius:6px;cursor:pointer;font-size:18px;line-height:1;transition:background .15s,color .15s;user-select:none}
-.zoom-wrap{display:flex;align-items:center;gap:5px;background:#101523;border:1px solid #252d48;border-radius:8px;padding:3px 6px;white-space:nowrap}
-.zoom-btn{background:#141828;border:1px solid #2a3458;color:#8ea8ff;padding:3px 9px;border-radius:5px;cursor:pointer;font-size:13px;line-height:1.2;transition:background .15s,color .15s,border-color .15s}
+.pan-btn{background:#141828;border:1px solid #252d48;color:#5060a0;padding:0 16px;border-radius:6px;cursor:pointer;font-size:18px;line-height:1;transition:background .15s,color .15s;user-select:none;height:34px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
+.zoom-wrap{display:inline-flex;align-items:center;gap:5px;background:#101523;border:1px solid #252d48;border-radius:8px;padding:0 6px;white-space:nowrap;height:34px;box-sizing:border-box}
+.zoom-btn{background:#141828;border:1px solid #2a3458;color:#8ea8ff;padding:0 9px;border-radius:5px;cursor:pointer;font-size:13px;line-height:1;transition:background .15s,color .15s,border-color .15s;height:26px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
 .zoom-btn:hover{background:#1a2239;color:#c8d6ff;border-color:#4a63aa}
 .zoom-val{font-size:11px;color:#93a2ca;min-width:44px;text-align:center;font-variant-numeric:tabular-nums}
-.tour-btn{background:#141828;border:1px solid #252d48;color:#22EAA8;padding:5px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:.06em;transition:background .15s,color .15s,border-color .15s;user-select:none;white-space:nowrap}
+.tour-btn{background:#141828;border:1px solid #252d48;color:#22EAA8;padding:0 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:.06em;transition:background .15s,color .15s,border-color .15s;user-select:none;white-space:nowrap;height:34px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
 .tour-btn:hover{background:#0a1a14;border-color:#22EAA8}
-.tour-btn.active{background:#003C28;border-color:#22EAA8;color:#90FFD8}
-#tour-nav{display:none;align-items:center;gap:8px;margin:4px auto 0;max-width:1100px}
-#tour-nav.visible{display:flex}
-.tnav{background:#141828;border:1px solid #252d48;color:#5060a0;padding:4px 14px;border-radius:6px;cursor:pointer;font-size:13px;transition:background .15s,color .15s}
-.tnav:hover{background:#1c2238;color:#FFD040}
-#tour-counter{font-size:11px;color:#404868;flex:1;text-align:center}
 .chart-outer{max-width:100%;overflow-x:auto;overflow-y:auto;height:calc(100vh - 180px);position:relative;cursor:grab;border-radius:8px;border:1px solid #141828;scrollbar-width:thin;scrollbar-color:#252d48 #080a10;-webkit-overflow-scrolling:touch;}
 @media(max-width:768px){.chart-outer{overflow-x:hidden;height:calc(100vh - 240px);}}
 .chart-outer:active{cursor:grabbing}
@@ -60,7 +54,6 @@ span.np:hover{color:#ffe0a0;border-bottom-color:#ffe0a0}
 #tip-ref{font-size:10px;color:#404868;margin-bottom:4px}
 #tip-ref-label{font-size:9px;color:#303850;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px}
 #tip-links{display:flex;flex-wrap:wrap;gap:5px}
-#tip-tour-hint{display:none;margin-top:10px;padding-top:8px;border-top:1px solid #1e2438;font-size:10px;color:#404868;text-align:center;letter-spacing:.04em}
 #tip-link-legend{margin-top:9px;padding-top:7px;border-top:1px solid #1a2030;font-size:9px;color:#303850;display:flex;gap:10px;flex-wrap:wrap}
 .tll{display:flex;align-items:center;gap:3px;white-space:nowrap}
 .tll-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
@@ -118,6 +111,13 @@ footer{text-align:center;margin-top:36px;padding:18px;border-top:1px solid #1418
   .nav-item-name{font-size:11px;}
   #chart-col .chart-outer{border-radius:0 0 8px 8px;border-left:1px solid #141828;overflow-x:auto;height:calc(100vh - 390px);}
 }
+/* ── Collapsible chrome ────────────────────────────────── */
+.chrome-toggle{background:#141828;border:1px solid #2a3458;color:#8ea8ff;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;line-height:1.2;transition:background .15s,color .15s,border-color .15s;white-space:nowrap}
+.chrome-toggle:hover{background:#1a2239;color:#c8d6ff;border-color:#4a63aa}
+body.chrome-collapsed header,
+body.chrome-collapsed .legend{display:none}
+body.chrome-collapsed .chart-outer,
+body.chrome-collapsed #nav-panel{height:calc(100vh - 68px)}
 </style>
 </head>
 <body>
@@ -138,15 +138,9 @@ footer{text-align:center;margin-top:36px;padding:18px;border-top:1px solid #1418
       <button class="zoom-btn" id="zoom-in" title="Zoom in">+</button>
       <button class="zoom-btn" id="zoom-reset" title="Reset zoom">Reset</button>
     </div>
-    <button class="tour-btn" id="tour-btn">&#9654; Tour</button>
     <button class="tour-btn" id="open-all-btn">&#9660; Open All</button>
+    <button class="chrome-toggle" id="chrome-toggle" title="Hide / show page header to reclaim vertical space">&#9650; Hide</button>
     <button class="pan-btn" id="pan-right">&#8594;</button>
-  </div>
-  <div id="tour-nav">
-    <button class="tnav" id="tour-prev">&#8592; Prev</button>
-    <span id="tour-counter"></span>
-    <button class="tnav" id="tour-next">Next &#8594;</button>
-    <button class="tnav" id="tour-stop">&#9632; Stop</button>
   </div>
   <div id="app-layout">
     <nav id="nav-panel" aria-label="Navigator">
@@ -183,7 +177,6 @@ footer{text-align:center;margin-top:36px;padding:18px;border-top:1px solid #1418
     <span class="tll"><span class="tll-dot" style="background:#6BDFFF"></span>Location 🗺</span>
     <span class="tll"><span class="tll-dot" style="background:#78E8A0"></span>Concept / Event</span>
   </div>
-  <div id="tip-tour-hint"></div>
 </div>
 <div id="tip-hover">
   <div id="th-name" style="font-weight:700;color:#f5ecd4;font-size:14px;margin-bottom:2px"></div>
@@ -888,20 +881,16 @@ document.getElementById('zoom-in').addEventListener('click',()=>applyZoom(zoom*1
 document.getElementById('zoom-out').addEventListener('click',()=>applyZoom(zoom/1.15));
 document.getElementById('zoom-reset').addEventListener('click',()=>applyZoom(1));
 
-// Returns row index only if cursor is physically over that row's bar rectangle
+// Returns row index for any click within the row's Y band (below the year-axis
+// header). The cursor no longer has to land inside the colored bar — empty
+// row area on the right of short bars is selectable too.
 function findRow(clientX,clientY,rect){
-  const scaleX=CVS_W/rect.width;
   const scaleY=CVS_H/rect.height;
-  const mx=(clientX-rect.left)*scaleX;
   const my=(clientY-rect.top)*scaleY;
+  if(my<HEADER) return -1;
   for(let i=0;i<people.length;i++){
     const ry=getRowY(i);
-    if(my<ry||my>ry+ROW) continue;
-    const p=people[i];
-    const bx=Math.max(yx(p.b),LPAD);
-    const endYr=p.d!==null?p.d:Math.min(p.b+70,YE-5);
-    const bw=Math.max(yx(endYr)-bx,5);
-    if(mx>=bx&&mx<=bx+bw) return i;
+    if(my>=ry&&my<=ry+ROW) return i;
   }
   return -1;
 }
@@ -1228,8 +1217,11 @@ function gotoIdx(idx,_showTip){
   const ryC = getRowY(idx);
 
   // scrollLeft: put the bar as far left as possible in chart-outer, clamped into canvas bounds.
-  // scrollTop: top-align the selected row (row top near chart-outer top, with small padding).
-  const topAligned = ryC * zoom - REM;
+  // scrollTop: place the selected row at the shared alignment target Y so it lines up with
+  //            Navigator and drawer. See commonAlignmentTargetY().
+  const targetY = commonAlignmentTargetY();
+  const chartOuterTop = outer.getBoundingClientRect().top;
+  const topAligned = ryC * zoom - (targetY - chartOuterTop);
   const maxScrollLeft = outer.scrollWidth - outer.clientWidth;
   const newScrollLeft = Math.max(0, Math.min(bxC * zoom, maxScrollLeft));
   const newScrollTop  = Math.max(0, Math.min(topAligned, outer.scrollHeight - outer.clientHeight));
@@ -1265,10 +1257,10 @@ function gotoIdx(idx,_showTip){
   // Tooltip position
   const outerRect = outer.getBoundingClientRect();
 
-  // Tooltip position — bar is now top-aligned (row top at outer.top + REM).
+  // Tooltip position — bar sits at the shared alignment target Y.
   // Place tooltip just below the bar bottom, clamped into viewport.
   let tx = outerRect.left + REM;
-  const barScreenBottom = outerRect.top + REM + ROW * zoom;
+  const barScreenBottom = commonAlignmentTargetY() + ROW * zoom;
   let ty = barScreenBottom + REM;
   if(tx + TIP_W > window.innerWidth  - REM) tx = window.innerWidth  - TIP_W - REM;
   if(tx < REM) tx = REM;
@@ -1309,7 +1301,7 @@ function repositionTip(){
   const TIP_W = 360, TIP_H = tip.offsetHeight || 460;
   const outerRect = outer.getBoundingClientRect();
   let tx = outerRect.left + REM;
-  let ty = outerRect.top + REM + ROW * zoom + REM;
+  let ty = commonAlignmentTargetY() + ROW * zoom + REM;
   if(tx + TIP_W > window.innerWidth  - REM) tx = window.innerWidth  - TIP_W - REM;
   if(tx < REM) tx = REM;
   if(ty + TIP_H > window.innerHeight - REM) ty = window.innerHeight - TIP_H - REM;
@@ -1503,17 +1495,49 @@ function _syncDrawerHighlight(idx){
 const openAllBtnEl=document.getElementById('open-all-btn');
 if(isMobile){openAllBtnEl.style.display='none';}else{openAllBtnEl.addEventListener('click',openAllCards);}
 
+// ── Chrome toggle (collapse / expand the page header area) ────────────────────
+document.getElementById('chrome-toggle').addEventListener('click',()=>{
+  document.body.classList.toggle('chrome-collapsed');
+  const btn=document.getElementById('chrome-toggle');
+  const collapsed=document.body.classList.contains('chrome-collapsed');
+  btn.innerHTML=collapsed ? '&#9660; Show' : '&#9650; Hide';
+  // Viewport size changed — re-align the selected item so the three panels stay lined up.
+  if(selectedIdx>=0){
+    navScrollTo(selectedIdx);
+    if(_drawer) _syncDrawerHighlight(selectedIdx);
+    // Also re-run gotoIdx''s chart scroll to refresh target Y
+    const p=people[selectedIdx];
+    const ryC=getRowY(selectedIdx);
+    const targetY=commonAlignmentTargetY();
+    const chartOuterTop=outer.getBoundingClientRect().top;
+    const topAligned=ryC*zoom-(targetY-chartOuterTop);
+    outer.scrollTop=Math.max(0,Math.min(topAligned,outer.scrollHeight-outer.clientHeight));
+    _prevScrollTop2=outer.scrollTop;
+  }
+});
+
 // ── Navigator ─────────────────────────────────────────────────────────────────
-// Scroll `container` so that `item`'s top edge lands at the SAME screen Y as
-// the chart's selected row top. gotoIdx scrolls so `ryC * zoom` sits at
-// `outer.top + REM`, so that is the shared anchor. Nav-list and drawer-list
-// both use this helper to align to that reference — giving all three panels
-// the same screen-Y for the selected entry (subject to scroll bounds).
+// Returns the shared screen Y where every panel should top-align its selected
+// entry. Uses the MOST-CONSTRAINED container top as the anchor so items never
+// have to appear above any container's viewport. nav-list and drawer-list both
+// sit below their own headers, so their tops are lower on the page than
+// chart-outer's top; we pick the lowest of the three.
+function commonAlignmentTargetY(){
+  const REM = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  const chartTop = outer.getBoundingClientRect().top;
+  const navList = document.getElementById('nav-list');
+  const drawerList = _drawer ? _drawer.querySelector('.all-drawer-list') : null;
+  const navTop = navList ? navList.getBoundingClientRect().top : chartTop;
+  const drawerTop = drawerList ? drawerList.getBoundingClientRect().top : chartTop;
+  return Math.max(chartTop, navTop, drawerTop) + REM;
+}
+
+// Scroll `container` so that `item`'s top edge lands at the shared alignment
+// target Y. All three panels use this same target so the selected entry lines
+// up perfectly in Y across Navigator, chart, and drawer.
 function alignToTop(container, item, smooth){
   if(!container || !item) return;
-  const REM = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  const chartRect = outer.getBoundingClientRect();
-  const targetScreenY = chartRect.top + REM;
+  const targetScreenY = commonAlignmentTargetY();
   const itemRect = item.getBoundingClientRect();
   const delta = itemRect.top - targetScreenY;
   const target = container.scrollTop + delta;
@@ -1568,51 +1592,6 @@ function navScrollTo(idx){
   window._navRenderList=renderList; // expose for testing
 })();
 
-// ── Tour mode ─────────────────────────────────────────────────────────────────
-// Cycles through all people one at a time, centering each bar and showing
-// their tooltip. Prev / Next / Stop controls appear below the pan bar.
-let tourIdx   = -1;
-let tourTimer = null;
-const TOUR_DWELL = 4000; // ms per person before auto-advancing
-
-function tourShow(idx){
-  tourIdx = ((idx % people.length) + people.length) % people.length;
-  selectedIdx = tourIdx;
-  gotoIdx(tourIdx,true);
-  document.getElementById('tour-counter').textContent =
-    (tourIdx+1) + ' / ' + people.length + '  —  ' + people[tourIdx].n;
-  const hint = document.getElementById('tip-tour-hint');
-  hint.style.display = 'block';
-  hint.textContent   = 'PRESS SPACEBAR TO CONTINUE  ·  ESC TO EXIT';
-}
-
-function tourStart(){
-  document.getElementById('tour-btn').classList.add('active');
-  document.getElementById('tour-btn').textContent = '⏸ Tour';
-  document.getElementById('tour-nav').classList.add('visible');
-  tourShow(0);
-}
-
-function tourStop(){
-  clearTimeout(tourTimer);
-  tourIdx = -1;
-  document.getElementById('tip-tour-hint').style.display = 'none';
-  document.getElementById('tour-btn').classList.remove('active');
-  document.getElementById('tour-btn').textContent = '▶ Tour';
-  document.getElementById('tour-nav').classList.remove('visible');
-  selectedIdx=-1; draw(); hideTip(); navScrollTo(-1);
-}
-
-document.getElementById('tour-btn').addEventListener('click',()=>{
-  tourIdx >= 0 ? tourStop() : tourStart();
-});
-document.getElementById('tour-prev').addEventListener('click',()=>{
-  clearTimeout(tourTimer); tourShow(tourIdx-1);
-});
-document.getElementById('tour-next').addEventListener('click',()=>{
-  clearTimeout(tourTimer); tourShow(tourIdx+1);
-});
-document.getElementById('tour-stop').addEventListener('click', tourStop);
 // ── Mobile bottom nav ────────────────────────────────────────────────────────
 function mobNavGoto(idx){
   idx=Math.max(0,Math.min(people.length-1,idx));
