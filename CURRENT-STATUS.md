@@ -9,15 +9,14 @@
 - Kanban board (#5): https://github.com/users/CieloVistaSoftware/projects/5
 
 ### Last action
-Shipped #12 (commit `7f4413a`): three UX refinements bundled.
-- **Collapsible chrome** — Hide button in the pan-bar collapses kicker/title/subtitle/intro/legend; chart + nav grow to fill. Click again to restore.
-- **`commonAlignmentTargetY()`** — alignment helper now uses `max(chart.top, nav-list.top, drawer-list.top) + REM` as the shared anchor. Fixes the Isaac-off-the-top-of-nav bug (target was above nav-list''s viewport). Row now sits slightly lower in chart-outer, so the year-axis header stays fully visible too.
-- **Row-wide click** — `findRow` no longer requires the cursor to hit the bar rectangle; clicking anywhere on a row (below HEADER) selects that person. Name-column click still handled separately.
+Shipped #14 (commit `b20ff2e`): scroll-driven auto-select now snaps the chart horizontally so the newly-active bar sits 1rem from chart-outer's left, matching `gotoIdx`'s behavior. When user scrolls vertically, each new person coming into the "active" slot triggers a `scrollLeft` update alongside the nav/drawer sync. The setting-scrollLeft-inside-a-scroll-handler concern is handled by the existing scrollTop-change guard: setting scrollLeft fires another scroll event, but that re-entry returns early because scrollTop is unchanged. No loop.
+
+Note: the earlier commit `9a6312f` (from before this turn, not in my compacted history) had already added the 1rem left padding in `gotoIdx` and unified the scroll listener's detection anchor with `commonAlignmentTargetY()`. So today's change is just the remaining piece — horizontal snap in the scroll listener itself.
 
 ### Next step
-1. Reload live site and sanity-check the three changes: (a) Hide/Show works and the chart-outer grows; (b) click Adam/Abraham/Isaac and verify their rows align in Y across all three panels even when they''re near the top of the dataset; (c) click on empty row space to the right of short bars and verify selection fires.
-2. Revisit #1 (Lamech scroll) — worth closing now if the live-site verification passes.
-3. #2 (regression baseline) — still the biggest outstanding debt.
+1. Reload and scroll the chart vertically. Confirm that whichever person becomes active has their bar visible and sitting ~1rem from chart-outer's left edge, regardless of where horizontal scroll was before.
+2. Close #1 (Lamech scroll) once live-site check confirms — we've now addressed the underlying bug from several angles (#6 scroll-into-view, #7/#10 top-align, #12 most-constrained anchor, #14 horizontal snap on scroll). Hard to imagine it still repros.
+3. Still #2 (regression baseline) is the biggest debt. Seven behavior-changing commits this session. Would help to have a handful of headless tests that click each era's first person and assert their position across the three panels, so we stop shipping these incrementally without a safety net.
 
 ## Locked decisions
 - **Old URL**: Let `https://cielovistasoftware.github.io/one-electron-universe/JesusFamilyTree/` die on next one-electron-universe deploy. No redirect.
