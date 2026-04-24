@@ -9,10 +9,11 @@
 - Kanban board (#5): https://github.com/users/CieloVistaSoftware/projects/5
 
 ### Last action
-Executed the three locked-decision cleanups plus the follow-up sweep of seven additional `*jesus*` ad-hoc scripts in `C:\dev` (check-jesus.js, copy-jesus.cjs, copy-jesus.js, fix-jesus-goto.js, publish-jesus.cmd, push-jesus.cmd, verify-jesus.js — all one-off helpers operating on deleted paths, all obsolete, zero references anywhere). `C:\dev` is now clean of JFT-related loose scripts. Registry still correct at `C:\dev\jesus-family-tree`.
+Replaced "Open All" spatial-cards feature with a right-side drawer holding a scrollable list of all 77 people (commit 8be8d39). Cards no longer stack or clip — the drawer is the single source of full detail while open. Click any drawer row to find that person on the tree. All selection paths (bar click, nav panel, keyboard, tour, inline link, drawer click) now sync the drawer highlight and hide the inline tooltip when the drawer is open.
 
 ### Next step
-Work the board. Issue #2 (regression baseline) first, then #1 (Lamech scroll bug).
+1. Reload the live site and sanity-check the drawer visually (slide-in, close button, click-to-find, scroll-sync, esc to close).
+2. Then tackle issue #2 (regression baseline) — any existing Playwright tests referencing `.open-all-card` will fail and need updating; more importantly, we still don't have a trusted test baseline to catch behavioral regressions before they're shipped.
 
 ## Locked decisions
 - **Old URL**: Let `https://cielovistasoftware.github.io/one-electron-universe/JesusFamilyTree/` die on next one-electron-universe deploy. No redirect.
