@@ -1356,6 +1356,16 @@ outer.addEventListener('scroll',function(){
     // through a smooth animation on every scroll event.
     navScrollTo(activeIdx, false);
     if(_drawer) _syncDrawerHighlight(activeIdx, false);
+    // Snap horizontal scroll so the newly-active bar sits 1rem from chart-outer's
+    // left edge, matching gotoIdx's behavior. Modifying scrollLeft here fires
+    // another scroll event but the scrollTop guard at the top short-circuits it.
+    const REM=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;
+    const p=people[activeIdx];
+    const bxC=Math.max(yx(p.b),LPAD);
+    const maxScrollLeft=outer.scrollWidth-outer.clientWidth;
+    const newScrollLeft=Math.max(0,Math.min(bxC*zoom-REM,maxScrollLeft));
+    outer.scrollLeft=newScrollLeft;
+    _stX=newScrollLeft;
   }
   if(tip.style.display==='block') repositionTip();
 },{passive:true});
