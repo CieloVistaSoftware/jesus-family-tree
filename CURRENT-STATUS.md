@@ -9,12 +9,15 @@
 - Kanban board (#5): https://github.com/users/CieloVistaSoftware/projects/5
 
 ### Last action
-Shipped #10 (commit `7aaa57c`): top-align + white border + shared screen-Y reference across all three panels. `alignToTop` now uses `outer.top + REM` (chart-outer's top plus one rem) as the common anchor for nav-list, chart, and drawer-list — so the selected entry's top edge lands at the same absolute screen Y in all three columns. CSS for `.nav-item.active` and `.all-drawer-item.selected` flipped gold → white to match the chart bar's selection glow. Also folded in the drawer-click unification (closed #8) — drawer rows now route through `gotoIdx` and the old `gotoIdxFromDrawer` helper is gone.
+Shipped #12 (commit `7f4413a`): three UX refinements bundled.
+- **Collapsible chrome** — Hide button in the pan-bar collapses kicker/title/subtitle/intro/legend; chart + nav grow to fill. Click again to restore.
+- **`commonAlignmentTargetY()`** — alignment helper now uses `max(chart.top, nav-list.top, drawer-list.top) + REM` as the shared anchor. Fixes the Isaac-off-the-top-of-nav bug (target was above nav-list''s viewport). Row now sits slightly lower in chart-outer, so the year-axis header stays fully visible too.
+- **Row-wide click** — `findRow` no longer requires the cursor to hit the bar rectangle; clicking anywhere on a row (below HEADER) selects that person. Name-column click still handled separately.
 
 ### Next step
-1. Reload live site and click across multiple persons (Seth, Arphaxad, David, Jesus) — confirm all three highlighted entries land at the same screen Y and the white glow reads cleanly in each panel.
-2. Revisit #1 (Lamech scroll) — likely fully resolved by #6 + #7 + #10 cumulatively; close if verified.
-3. Still pending: #2 (regression baseline) — remains the highest-leverage next move since we keep shipping blind.
+1. Reload live site and sanity-check the three changes: (a) Hide/Show works and the chart-outer grows; (b) click Adam/Abraham/Isaac and verify their rows align in Y across all three panels even when they''re near the top of the dataset; (c) click on empty row space to the right of short bars and verify selection fires.
+2. Revisit #1 (Lamech scroll) — worth closing now if the live-site verification passes.
+3. #2 (regression baseline) — still the biggest outstanding debt.
 
 ## Locked decisions
 - **Old URL**: Let `https://cielovistasoftware.github.io/one-electron-universe/JesusFamilyTree/` die on next one-electron-universe deploy. No redirect.
