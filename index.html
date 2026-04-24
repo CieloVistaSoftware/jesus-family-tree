@@ -656,11 +656,7 @@ function calcAge(p){return p.d===null?null:Math.abs(p.d-p.b);}
 
 const CVS_H=totalH();
 const cvs=document.getElementById('tlc');
-const dpr=isMobile?1:Math.min(window.devicePixelRatio||1,2);
-cvs.width=CVS_W*dpr;cvs.height=CVS_H*dpr;
-cvs.style.width=CVS_W+'px';cvs.style.height=CVS_H+'px';
 const ctx=cvs.getContext('2d');
-ctx.scale(dpr,dpr);
 
 let zoom=1;
 const ZOOM_MIN=0.55;
@@ -668,6 +664,18 @@ const ZOOM_MAX=2.2;
 const zoomVal=document.getElementById('zoom-val');
 
 function clamp(v,min,max){return Math.min(max,Math.max(min,v));}
+
+function syncCanvasResolution(){
+  const dpr=isMobile?1:Math.min(window.devicePixelRatio||1,2);
+  const cssW=CVS_W*zoom;
+  const cssH=CVS_H*zoom;
+  cvs.style.width=cssW+'px';
+  cvs.style.height=cssH+'px';
+  cvs.width=Math.max(1,Math.round(cssW*dpr));
+  cvs.height=Math.max(1,Math.round(cssH*dpr));
+  // Use normalized transform so all drawing code stays in base world coords.
+  ctx.setTransform(cvs.width/cssW,0,0,cvs.height/cssH,0,0);
+}
 
 function applyZoom(nextZoom,anchorClientX){
   const prev=zoom;
@@ -677,10 +685,10 @@ function applyZoom(nextZoom,anchorClientX){
   const anchorViewportX=(typeof anchorClientX==='number')?clamp(anchorClientX-rect.left,0,outer.clientWidth):outer.clientWidth/2;
   const anchorWorldX=outer.scrollLeft+anchorViewportX;
   const ratio=zoom/prev;
-  cvs.style.width=(CVS_W*zoom)+'px';
-  cvs.style.height=(CVS_H*zoom)+'px';
+  syncCanvasResolution();
   outer.scrollLeft=anchorWorldX*ratio-anchorViewportX;
   zoomVal.textContent=Math.round(zoom*100)+'%';
+  draw();
 }
 
 // Legend
@@ -805,6 +813,7 @@ function draw(){
   });
 }
 
+syncCanvasResolution();
 draw();
 
 // Pan
@@ -1489,21 +1498,81 @@ function _syncDrawerHighlight(idx){
   const item = _drawer.querySelector('.all-drawer-item[data-idx="'+idx+'"]');
   if(item){
     item.classList.add('selected');
-    item.scrollIntoView({behavior:'smooth', block:'nearest'});
+    const list = _drawer.querySelector('.all-drawer-list');
+    alignToChartCenter(list, item, true);
   }
+}
+
+function gotoIdxFromDrawer(idx, sourceEl){
+  idx=Math.max(0,Math.min(people.length-1,idx));
+  const p=people[idx];
+  const REM=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;
+  const bxC=Math.max(yx(p.b),LPAD);
+  const ryC=getRowY(idx);
+
+  const outerRect=outer.getBoundingClientRect();
+  const srcRect=sourceEl.getBoundingClientRect();
+
+  // Align selected row to the same on-screen Y position as the clicked drawer entry.
+  const srcMid=srcRect.top+(srcRect.height/2);
+  let targetRowTop=(srcMid-outerRect.top)-(ROW*zoom/2);
+  const maxRowTop=Math.max(REM, outer.clientHeight-(ROW*zoom)-REM);
+  targetRowTop=Math.max(REM,Math.min(targetRowTop,maxRowTop));
+
+  const maxScrollLeft=outer.scrollWidth-outer.clientWidth;
+  const maxScrollTop=outer.scrollHeight-outer.clientHeight;
+  const newScrollLeft=Math.max(0,Math.min((bxC*zoom)-REM,maxScrollLeft));
+  const newScrollTop=Math.max(0,Math.min((ryC*zoom)-targetRowTop,maxScrollTop));
+
+  outer.scrollLeft=newScrollLeft;
+  outer.scrollTop=newScrollTop;
+  _stX=newScrollLeft;
+  _stY=newScrollTop;
+  _prevScrollTop2=newScrollTop;
+
+  selectedIdx=idx;
+  _scrollTipRow=idx;
+  _tipDragged=false;
+  visibleTipRow=idx;
+  draw();
+  hideTip();
+  navScrollTo(idx);
+  if(_drawer) _syncDrawerHighlight(idx);
+  if(isMobile) mobNavUpdate(idx);
 }
 
 const openAllBtnEl=document.getElementById('open-all-btn');
 if(isMobile){openAllBtnEl.style.display='none';}else{openAllBtnEl.addEventListener('click',openAllCards);}
 
 // ── Navigator ─────────────────────────────────────────────────────────────────
+// Scroll `container` so that `item` (a descendant) has its vertical center
+// at the same screen y as chart-outer's vertical center. Used to align the
+// selected entry across Navigator (left), chart (main), and drawer (right).
+function alignToChartCenter(container, item, smooth){
+  if(!container || !item) return;
+  const chartRect = outer.getBoundingClientRect();
+  const targetScreenY = chartRect.top + chartRect.height / 2;
+  const itemRect = item.getBoundingClientRect();
+  const currentItemCenterY = itemRect.top + itemRect.height / 2;
+  const delta = currentItemCenterY - targetScreenY;
+  const target = container.scrollTop + delta;
+  const max = container.scrollHeight - container.clientHeight;
+  const clamped = Math.max(0, Math.min(target, max));
+  if(smooth){
+    container.scrollTo({top: clamped, behavior: 'smooth'});
+  } else {
+    container.scrollTop = clamped;
+  }
+}
+
 function navScrollTo(idx){
   document.querySelectorAll('.nav-item').forEach(el=>{
     el.classList.toggle('active', Number(el.dataset.idx)===idx);
   });
   if(idx>=0){
-    const activeEl=document.getElementById('nav-list').querySelector('.nav-item.active');
-    if(activeEl) activeEl.scrollIntoView({block:'nearest',inline:'nearest'});
+    const navList = document.getElementById('nav-list');
+    const activeEl = navList.querySelector('.nav-item.active');
+    if(activeEl) alignToChartCenter(navList, activeEl, true);
   }
 }
 
