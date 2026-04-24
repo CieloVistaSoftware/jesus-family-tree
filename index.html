@@ -92,7 +92,7 @@ footer{text-align:center;margin-top:36px;padding:18px;border-top:1px solid #1418
 .all-drawer-list::-webkit-scrollbar-thumb{background:#252d48;border-radius:3px}
 .all-drawer-item{padding:13px 16px;border-bottom:1px solid #1a2030;border-left:4px solid #2a3458;cursor:pointer;font-size:12px;line-height:1.65;transition:background .12s}
 .all-drawer-item:hover{background:#101523}
-.all-drawer-item.selected{background:rgba(255,208,64,0.06);border-left-color:#FFD040!important;box-shadow:inset 0 0 0 1px #FFD040,0 0 10px rgba(255,208,64,0.35)}
+.all-drawer-item.selected{background:rgba(255,255,255,0.06);border-left-color:#ffffff!important;box-shadow:inset 0 0 0 1px #ffffff,0 0 10px rgba(255,255,255,0.35)}
 /* ── Navigator + two-column layout ── */
 #app-layout{display:flex;align-items:stretch;gap:0;}
 #nav-panel{width:190px;min-width:150px;flex-shrink:0;display:flex;flex-direction:column;background:#0a0d18;border-right:1px solid #1a2030;height:calc(100vh - 180px);}
@@ -104,7 +104,7 @@ footer{text-align:center;margin-top:36px;padding:18px;border-top:1px solid #1418
 #nav-list::-webkit-scrollbar-track{background:#080a10;}
 #nav-list::-webkit-scrollbar-thumb{background:#252d48;border-radius:2px;}
 .nav-item{padding:5px 10px 5px 12px;cursor:pointer;display:flex;flex-direction:column;gap:1px;border-left:2px solid transparent;transition:background .1s;}
-.nav-item:hover{background:#111828;}.nav-item.active{background:#141a2e;border-left-color:#FFD040;box-shadow:inset 0 0 0 1px #FFD040,0 0 10px rgba(255,208,64,0.35);}
+.nav-item:hover{background:#111828;}.nav-item.active{background:#141a2e;border-left-color:#ffffff;box-shadow:inset 0 0 0 1px #ffffff,0 0 10px rgba(255,255,255,0.35);}
 .nav-item-name{font-size:12px;font-weight:600;color:#c4cad8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .nav-item.active .nav-item-name{color:#f5ecd4;}.nav-item-date{font-size:10px;color:#404868;}
 #chart-col{flex:1;min-width:0;}
@@ -1504,16 +1504,18 @@ const openAllBtnEl=document.getElementById('open-all-btn');
 if(isMobile){openAllBtnEl.style.display='none';}else{openAllBtnEl.addEventListener('click',openAllCards);}
 
 // ── Navigator ─────────────────────────────────────────────────────────────────
-// Scroll `container` so that `item` (a descendant) has its top edge at
-// container.top + small padding. Used to top-align the selected entry across
-// Navigator (left), chart (main), and drawer (right).
+// Scroll `container` so that `item`'s top edge lands at the SAME screen Y as
+// the chart's selected row top. gotoIdx scrolls so `ryC * zoom` sits at
+// `outer.top + REM`, so that is the shared anchor. Nav-list and drawer-list
+// both use this helper to align to that reference — giving all three panels
+// the same screen-Y for the selected entry (subject to scroll bounds).
 function alignToTop(container, item, smooth){
   if(!container || !item) return;
-  const PADDING = 8;
-  const containerRect = container.getBoundingClientRect();
+  const REM = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  const chartRect = outer.getBoundingClientRect();
+  const targetScreenY = chartRect.top + REM;
   const itemRect = item.getBoundingClientRect();
-  const currentItemTopInContainer = itemRect.top - containerRect.top;
-  const delta = currentItemTopInContainer - PADDING;
+  const delta = itemRect.top - targetScreenY;
   const target = container.scrollTop + delta;
   const max = container.scrollHeight - container.clientHeight;
   const clamped = Math.max(0, Math.min(target, max));
