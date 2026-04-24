@@ -1223,7 +1223,7 @@ function gotoIdx(idx,_showTip){
   const chartOuterTop = outer.getBoundingClientRect().top;
   const topAligned = ryC * zoom - (targetY - chartOuterTop);
   const maxScrollLeft = outer.scrollWidth - outer.clientWidth;
-  const newScrollLeft = Math.max(0, Math.min(bxC * zoom, maxScrollLeft));
+  const newScrollLeft = Math.max(0, Math.min(bxC * zoom - REM, maxScrollLeft));
   const newScrollTop  = Math.max(0, Math.min(topAligned, outer.scrollHeight - outer.clientHeight));
 
   // Set scroll synchronously and kill RAF animator so it doesn't fight us
@@ -1336,18 +1336,26 @@ outer.addEventListener('scroll',function(){
     return;
   }
   _prevScrollTop2 = st;
-  const REM=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;
+  // Use the SAME anchor the panels use for alignment so scroll-detection and
+  // panel alignment agree on which row is "active". Factor in zoom too —
+  // earlier version treated getRowY as CSS px which only worked at zoom=1.
+  const targetY = commonAlignmentTargetY();
+  const chartOuterTop = outer.getBoundingClientRect().top;
+  const anchorOffset = targetY - chartOuterTop;
   let activeIdx=0;
   for(let i=0;i<people.length;i++){
-    if(getRowY(i)-st<=REM) activeIdx=i;
+    if(getRowY(i)*zoom - st <= anchorOffset) activeIdx=i;
     else break;
   }
   if(activeIdx!==_scrollTipRow){
     _scrollTipRow=activeIdx;
     selectedIdx=activeIdx;
     draw();
-    navScrollTo(activeIdx);
-    if(_drawer) _syncDrawerHighlight(activeIdx);
+    // Use instant (non-smooth) alignment while the user is actively scrolling
+    // so nav and drawer track the scroll continuously instead of lagging
+    // through a smooth animation on every scroll event.
+    navScrollTo(activeIdx, false);
+    if(_drawer) _syncDrawerHighlight(activeIdx, false);
   }
   if(tip.style.display==='block') repositionTip();
 },{passive:true});
@@ -1481,14 +1489,15 @@ function closeAllCards(){
   if(btn) btn.textContent = '▼ Open All';
 }
 
-function _syncDrawerHighlight(idx){
+function _syncDrawerHighlight(idx, smooth){
+  if(smooth===undefined) smooth=true;
   if(!_drawer) return;
   _drawer.querySelectorAll('.all-drawer-item').forEach(el => el.classList.remove('selected'));
   const item = _drawer.querySelector('.all-drawer-item[data-idx="'+idx+'"]');
   if(item){
     item.classList.add('selected');
     const list = _drawer.querySelector('.all-drawer-list');
-    alignToTop(list, item, true);
+    alignToTop(list, item, smooth);
   }
 }
 
@@ -1550,14 +1559,15 @@ function alignToTop(container, item, smooth){
   }
 }
 
-function navScrollTo(idx){
+function navScrollTo(idx, smooth){
+  if(smooth===undefined) smooth=true;
   document.querySelectorAll('.nav-item').forEach(el=>{
     el.classList.toggle('active', Number(el.dataset.idx)===idx);
   });
   if(idx>=0){
     const navList = document.getElementById('nav-list');
     const activeEl = navList.querySelector('.nav-item.active');
-    if(activeEl) alignToTop(navList, activeEl, true);
+    if(activeEl) alignToTop(navList, activeEl, smooth);
   }
 }
 
