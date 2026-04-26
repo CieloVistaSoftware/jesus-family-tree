@@ -23,8 +23,8 @@ main{padding:0 16px}
 .zoom-btn{background:#141828;border:1px solid #2a3458;color:#8ea8ff;padding:0 9px;border-radius:5px;cursor:pointer;font-size:13px;line-height:1;transition:background .15s,color .15s,border-color .15s;height:26px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
 .zoom-btn:hover{background:#1a2239;color:#c8d6ff;border-color:#4a63aa}
 .zoom-val{font-size:11px;color:#93a2ca;min-width:44px;text-align:center;font-variant-numeric:tabular-nums}
-.tour-btn{background:#141828;border:1px solid #252d48;color:#22EAA8;padding:0 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:.06em;transition:background .15s,color .15s,border-color .15s;user-select:none;white-space:nowrap;height:34px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
-.tour-btn:hover{background:#0a1a14;border-color:#22EAA8}
+.action-btn{background:#141828;border:1px solid #252d48;color:#22EAA8;padding:0 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:.06em;transition:background .15s,color .15s,border-color .15s;user-select:none;white-space:nowrap;height:34px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
+.action-btn:hover{background:#0a1a14;border-color:#22EAA8}
 .chart-outer{max-width:100%;overflow-x:auto;overflow-y:auto;height:calc(100vh - 180px);position:relative;cursor:grab;border-radius:8px;border:1px solid #141828;scrollbar-width:thin;scrollbar-color:#252d48 #080a10;-webkit-overflow-scrolling:touch;}
 @media(max-width:768px){.chart-outer{overflow-x:hidden;height:calc(100vh - 240px);}}
 .chart-outer:active{cursor:grabbing}
@@ -88,7 +88,7 @@ footer{text-align:center;margin-top:36px;padding:18px;border-top:1px solid #1418
 .all-drawer-item.selected{background:rgba(255,255,255,0.06);border-left-color:#ffffff!important;box-shadow:inset 0 0 0 1px #ffffff,0 0 10px rgba(255,255,255,0.35)}
 /* ── Navigator + two-column layout ── */
 #app-layout{display:flex;align-items:stretch;gap:0;}
-#nav-panel{width:190px;min-width:150px;flex-shrink:0;display:flex;flex-direction:column;background:#0a0d18;border-right:1px solid #1a2030;height:calc(100vh - 180px);}
+#nav-panel{width:240px;min-width:220px;flex-shrink:0;display:flex;flex-direction:column;background:#0a0d18;border-right:1px solid #1a2030;height:calc(100vh - 180px);}
 #nav-panel-header{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#404868;padding:8px 12px 5px;border-bottom:1px solid #141828;flex-shrink:0;font-weight:600;}
 #nav-search{background:transparent;border:none;border-bottom:1px solid #1a2030;color:#c4c6d0;font-size:12px;padding:7px 12px;outline:none;width:100%;flex-shrink:0;}
 #nav-search::placeholder{color:#303850;}
@@ -99,8 +99,9 @@ footer{text-align:center;margin-top:36px;padding:18px;border-top:1px solid #1418
 .nav-item{padding:5px 10px 5px 12px;cursor:pointer;display:flex;flex-direction:column;gap:1px;border-left:2px solid transparent;transition:background .1s;}
 .nav-item:hover{background:#111828;}.nav-item.active{background:#141a2e;border-left-color:#ffffff;box-shadow:inset 0 0 0 1px #ffffff,0 0 10px rgba(255,255,255,0.35);}
 .nav-item-name{font-size:12px;font-weight:600;color:#c4cad8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.nav-item.active .nav-item-name{color:#f5ecd4;}.nav-item-date{font-size:10px;color:#404868;}
+.nav-item.active .nav-item-name{color:#f5ecd4;}.nav-item-meta{font-size:10px;color:#404868;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #chart-col{flex:1;min-width:0;}
+#chart-panel-header{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#404868;padding:8px 12px 5px;border-bottom:1px solid #141828;background:#0a0d18;font-weight:600;}
 #chart-col .chart-outer{border-radius:0 8px 8px 0;border-left:none;}
 @media(max-width:768px){
   #app-layout{flex-direction:column;}
@@ -109,6 +110,8 @@ footer{text-align:center;margin-top:36px;padding:18px;border-top:1px solid #1418
   .nav-item{min-width:72px;max-width:108px;padding:5px 8px;flex-shrink:0;border-left:none;border-bottom:2px solid transparent;}
   .nav-item.active{background:#141a2e;border-left:none;border-bottom-color:#e8a030;}
   .nav-item-name{font-size:11px;}
+  .nav-item-meta{display:none;}
+  #chart-panel-header{display:none;}
   #chart-col .chart-outer{border-radius:0 0 8px 8px;border-left:1px solid #141828;overflow-x:auto;height:calc(100vh - 390px);}
 }
 /* ── Collapsible chrome ────────────────────────────────── */
@@ -138,7 +141,7 @@ body.chrome-collapsed #nav-panel{height:calc(100vh - 68px)}
       <button class="zoom-btn" id="zoom-in" title="Zoom in">+</button>
       <button class="zoom-btn" id="zoom-reset" title="Reset zoom">Reset</button>
     </div>
-    <button class="tour-btn" id="open-all-btn">&#9660; Open All</button>
+    <button class="action-btn" id="open-all-btn">&#9660; Open All</button>
     <button class="chrome-toggle" id="chrome-toggle" title="Hide / show page header to reclaim vertical space">&#9650; Hide</button>
     <button class="pan-btn" id="pan-right">&#8594;</button>
   </div>
@@ -149,6 +152,7 @@ body.chrome-collapsed #nav-panel{height:calc(100vh - 68px)}
       <div id="nav-list"></div>
     </nav>
     <div id="chart-col">
+      <div id="chart-panel-header">Timeline</div>
       <div class="chart-outer" id="chart-outer"><canvas id="tlc"></canvas></div>
     </div>
   </div>
@@ -1375,6 +1379,7 @@ window.addEventListener('load',function(){
     selectedIdx=0; _scrollTipRow=0;
     draw();
     navScrollTo(0);
+    if(!isMobile) openAllCards();
   },100);
 });
 
@@ -1425,8 +1430,7 @@ document.addEventListener('keydown',e=>{
   if((e.key==='+'||e.key==='='||e.key==='Add')&&(e.ctrlKey||e.metaKey)){e.preventDefault();applyZoom(zoom*1.15);}
   if((e.key==='-'||e.key==='Subtract')&&(e.ctrlKey||e.metaKey)){e.preventDefault();applyZoom(zoom/1.15);}
   if((e.key==='0'||e.key==='Numpad0')&&(e.ctrlKey||e.metaKey)){e.preventDefault();applyZoom(1);}
-  if(e.key==='Escape'){tourStop();selectedIdx=-1;draw();hideTip();navScrollTo(-1);closeAllCards();}
-  if(e.key===' '&&tourIdx>=0){e.preventDefault();clearTimeout(tourTimer);tourShow(tourIdx+1);}
+  if(e.key==='Escape'){selectedIdx=-1;draw();hideTip();navScrollTo(-1);closeAllCards();}
   if(e.key==='ArrowDown'&&visibleTipRow>=0){e.preventDefault();gotoIdx(visibleTipRow+1,true);}
   if(e.key==='ArrowUp'  &&visibleTipRow>=0){e.preventDefault();gotoIdx(visibleTipRow-1,true);}
   if(e.key==='D'&&e.ctrlKey&&e.shiftKey){e.preventDefault();_debug=!_debug;draw();
@@ -1598,8 +1602,8 @@ function navScrollTo(idx, smooth){
       nameDiv.className='nav-item-name';
       nameDiv.textContent=p.n;
       const dateDiv=document.createElement('div');
-      dateDiv.className='nav-item-date';
-      dateDiv.textContent=fmtNavYear(p.b);
+      dateDiv.className='nav-item-meta';
+      dateDiv.textContent=fmtNavYear(p.b)+' · '+p.rel;
       item.appendChild(nameDiv);
       item.appendChild(dateDiv);
       // Hover tooltip removed — the drawer is the detail view now.
