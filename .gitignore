@@ -1,4 +1,4 @@
-# Dependencies
+﻿# Dependencies
 node_modules/
 
 # Runtime / tooling
@@ -14,3 +14,4 @@ Thumbs.db
 coverage/
 test-results/
 playwright-report/
+.check.ps1
