@@ -133,7 +133,6 @@ body.chrome-collapsed #nav-panel{height:calc(100vh - 68px)}
 <main>
   <div class="legend" id="legend-el"></div>
   <div class="pan-bar">
-    <button class="pan-btn" id="pan-left">&#8592;</button>
     <span class="pan-hint">Adam far left &nbsp;·&nbsp; Jesus near right &nbsp;·&nbsp; Drag or arrow keys to pan &nbsp;·&nbsp; Ctrl + wheel / pinch to zoom</span>
     <div class="zoom-wrap" aria-label="Zoom controls">
       <button class="zoom-btn" id="zoom-out" title="Zoom out">−</button>
@@ -143,7 +142,6 @@ body.chrome-collapsed #nav-panel{height:calc(100vh - 68px)}
     </div>
     <button class="action-btn" id="open-all-btn">&#9660; Open All</button>
     <button class="chrome-toggle" id="chrome-toggle" title="Hide / show page header to reclaim vertical space">&#9650; Hide</button>
-    <button class="pan-btn" id="pan-right">&#8594;</button>
   </div>
   <div id="app-layout">
     <nav id="nav-panel" aria-label="Navigator">
@@ -879,8 +877,6 @@ outer.addEventListener('wheel',e=>{
   if(!_sRaf) _sRaf=requestAnimationFrame(_animScroll);
 },{passive:false});
 
-document.getElementById('pan-left').addEventListener('click',()=>outer.scrollBy({left:-Math.round(outer.clientWidth*0.5),behavior:'smooth'}));
-document.getElementById('pan-right').addEventListener('click',()=>outer.scrollBy({left:Math.round(outer.clientWidth*0.5),behavior:'smooth'}));
 document.getElementById('zoom-in').addEventListener('click',()=>applyZoom(zoom*1.15));
 document.getElementById('zoom-out').addEventListener('click',()=>applyZoom(zoom/1.15));
 document.getElementById('zoom-reset').addEventListener('click',()=>applyZoom(1));
