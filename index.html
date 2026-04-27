@@ -73,13 +73,13 @@ footer{text-align:center;margin-top:36px;padding:18px;border-top:1px solid #1418
 .mob-nav-btn:active{background:#1e2840;}
 #mob-nav-name{flex:1;text-align:center;font-size:12px;color:#d4d6e0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #mob-nav-era{font-size:10px;color:#505878;}
-.all-drawer{width:380px;min-width:340px;flex-shrink:0;background:#0a0d18;border-left:1px solid #1a2030;display:flex;flex-direction:column;height:calc(100vh - 180px)}
+.all-drawer{width:380px;min-width:1rem;flex-shrink:0;overflow:hidden;background:#0a0d18;border-left:1px solid #1a2030;display:flex;flex-direction:column;height:calc(100vh - 180px)}
 @media(max-width:768px){.all-drawer{display:none}}
-.all-drawer-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #252d48;background:#0c0f1c;flex-shrink:0;gap:10px}
-.all-drawer-title{font-size:12px;font-weight:700;color:#f5ecd4;letter-spacing:.02em;flex:1;line-height:1.4}
+.all-drawer-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #252d48;background:#0c0f1c;flex-shrink:0;gap:10px;min-width:0}
+.all-drawer-title{font-size:12px;font-weight:700;color:#f5ecd4;letter-spacing:.02em;flex:1;line-height:1.4;min-width:0;overflow:hidden}
 .all-drawer-close{background:none;border:1px solid #2a3458;border-radius:4px;color:#6070a0;padding:4px 10px;font-size:14px;cursor:pointer;line-height:1;flex-shrink:0}
 .all-drawer-close:hover{background:#1e0a0a;color:#ff6060;border-color:#ff6060}
-.all-drawer-list{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#252d48 #080a10}
+.all-drawer-list{flex:1;min-width:0;overflow-x:hidden;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#252d48 #080a10}
 .all-drawer-list::-webkit-scrollbar{width:6px}
 .all-drawer-list::-webkit-scrollbar-track{background:#080a10}
 .all-drawer-list::-webkit-scrollbar-thumb{background:#252d48;border-radius:3px}
@@ -103,6 +103,10 @@ footer{text-align:center;margin-top:36px;padding:18px;border-top:1px solid #1418
 #chart-col{flex:1;min-width:0;}
 #chart-panel-header{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#404868;padding:8px 12px 5px;border-bottom:1px solid #141828;background:#0a0d18;font-weight:600;}
 #chart-col .chart-outer{border-radius:0 8px 8px 0;border-left:none;}
+#col-resizer{display:none;flex:0 0 10px;cursor:col-resize;user-select:none;touch-action:none;background:linear-gradient(180deg,#0d1324,#0a0f1d);border-left:1px solid #1b2338;border-right:1px solid #1b2338;align-items:center;justify-content:center}
+#col-resizer::before{content:'';width:2px;height:42px;border-radius:99px;background:#4e67ad;box-shadow:0 0 10px rgba(78,103,173,.45)}
+#col-resizer:hover{background:linear-gradient(180deg,#111933,#0d1429)}
+#col-resizer.active{background:linear-gradient(180deg,#172344,#101a34)}
 @media(max-width:768px){
   #app-layout{flex-direction:column;}
   #nav-panel{width:100%;height:auto;min-width:unset;border-right:none;border-bottom:1px solid #1a2030;}
@@ -113,12 +117,14 @@ footer{text-align:center;margin-top:36px;padding:18px;border-top:1px solid #1418
   .nav-item-meta{display:none;}
   #chart-panel-header{display:none;}
   #chart-col .chart-outer{border-radius:0 0 8px 8px;border-left:1px solid #141828;overflow-x:auto;height:calc(100vh - 390px);}
+  #col-resizer{display:none!important;}
 }
 /* ── Collapsible chrome ────────────────────────────────── */
 .chrome-toggle{background:#141828;border:1px solid #2a3458;color:#8ea8ff;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;line-height:1.2;transition:background .15s,color .15s,border-color .15s;white-space:nowrap}
 .chrome-toggle:hover{background:#1a2239;color:#c8d6ff;border-color:#4a63aa}
 body.chrome-collapsed header,
-body.chrome-collapsed .legend{display:none}
+body.chrome-collapsed .legend,
+body.chrome-collapsed .pan-hint{display:none}
 body.chrome-collapsed .chart-outer,
 body.chrome-collapsed #nav-panel,
 body.chrome-collapsed .all-drawer{height:calc(100vh - 68px)}
@@ -154,6 +160,7 @@ body.chrome-collapsed .all-drawer{height:calc(100vh - 68px)}
       <div id="chart-panel-header">Timeline</div>
       <div class="chart-outer" id="chart-outer"><canvas id="tlc"></canvas></div>
     </div>
+    <div id="col-resizer" role="separator" aria-orientation="vertical" aria-label="Resize timeline column"></div>
   </div>
 </main>
 <div id="tip">
@@ -630,7 +637,7 @@ const sections=[
 ];
 
 const ROW=30,GAP=5,STEP=ROW+GAP;
-const HEADER=58,LPAD=175,RPAD=50,SECTION_H=22;
+const HEADER=58,LPAD=12,RPAD=50,SECTION_H=22;
 const YS=-4100,YE=130,YR=YE-YS;
 const isMobile=/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||window.innerWidth<768;
 const CVS_W=isMobile?2800:5000;
@@ -767,10 +774,8 @@ function draw(){
       ctx.fillStyle='#22EAA8';
       ctx.font='700 9px system-ui';
       ctx.fillText('['+Math.round(bxC)+','+Math.round(ryC)+'] '+p.n, 8, ry+ROW/2+4);
-    } else {
-      ctx.textAlign='right';
-      ctx.fillText(p.n,LPAD-8,ry+ROW/2+4);
     }
+    // Row labels removed from the timeline canvas — names are shown in the Navigator panel only
 
     const bx=Math.max(yx(p.b),LPAD);
     const endYr=p.d!==null?p.d:Math.min(p.b+70,YE-5);
@@ -1378,6 +1383,10 @@ window.addEventListener('load',function(){
     navScrollTo(0);
     if(!isMobile) openAllCards();
   },100);
+  setTimeout(function(){
+    const introNote=document.querySelector('.intro-note');
+    if(introNote) introNote.style.display='none';
+  },10000);
 });
 
 // 200ms grace when leaving a row — invisible to the user but long enough
@@ -1438,6 +1447,97 @@ document.addEventListener('keydown',e=>{
 // ── Open All Tooltips (right-side drawer with scrollable list) ────────────────
 let _allCardsOpen=false;
 let _drawer=null;
+const chartCol=document.getElementById('chart-col');
+const navPanel=document.getElementById('nav-panel');
+const appLayout=document.getElementById('app-layout');
+const colResizer=document.getElementById('col-resizer');
+const CHART_COL_WIDTH_KEY='jft.chartColWidthPx';
+let _resizingCols=false;
+let _resizeStartX=0;
+let _resizeStartW=0;
+
+function remPx(rem){
+  return (parseFloat(getComputedStyle(document.documentElement).fontSize)||16)*rem;
+}
+
+function loadChartColWidth(){
+  try{
+    const saved=Number(localStorage.getItem(CHART_COL_WIDTH_KEY));
+    return Number.isFinite(saved)&&saved>0?saved:null;
+  }catch(_e){
+    return null;
+  }
+}
+
+function saveChartColWidth(px){
+  try{
+    localStorage.setItem(CHART_COL_WIDTH_KEY,String(Math.round(px)));
+  }catch(_e){
+    // Ignore storage failures (private mode, quota, blocked storage)
+  }
+}
+
+function getMaxChartColWidth(){
+  const resizerW=colResizer.getBoundingClientRect().width||10;
+  const navW=navPanel.getBoundingClientRect().width;
+  const drawerMin=_drawer?((parseFloat(getComputedStyle(_drawer).minWidth)||340)):0;
+  return Math.max(remPx(1),appLayout.clientWidth-navW-resizerW-drawerMin);
+}
+
+function setChartColWidth(nextPx){
+  const clamped=clamp(nextPx,remPx(1),getMaxChartColWidth());
+  chartCol.style.flex='0 0 auto';
+  chartCol.style.width=Math.round(clamped)+'px';
+  return clamped;
+}
+
+function refreshResizableColumns(){
+  const canResize=_allCardsOpen && !!_drawer && window.innerWidth>768;
+  colResizer.style.display=canResize?'flex':'none';
+  if(!canResize){
+    chartCol.style.width='';
+    chartCol.style.flex='1';
+    colResizer.classList.remove('active');
+    _resizingCols=false;
+    document.body.style.cursor='';
+    document.body.style.userSelect='';
+    return;
+  }
+  if(!chartCol.style.width){
+    const saved=loadChartColWidth();
+    setChartColWidth(saved||chartCol.getBoundingClientRect().width);
+  } else {
+    setChartColWidth(parseFloat(chartCol.style.width)||chartCol.getBoundingClientRect().width);
+  }
+}
+
+colResizer.addEventListener('mousedown',e=>{
+  if(window.innerWidth<=768||!_allCardsOpen)return;
+  _resizingCols=true;
+  _resizeStartX=e.clientX;
+  _resizeStartW=chartCol.getBoundingClientRect().width;
+  colResizer.classList.add('active');
+  document.body.style.cursor='col-resize';
+  document.body.style.userSelect='none';
+  e.preventDefault();
+});
+
+document.addEventListener('mousemove',e=>{
+  if(!_resizingCols)return;
+  setChartColWidth(_resizeStartW+(e.clientX-_resizeStartX));
+});
+
+document.addEventListener('mouseup',()=>{
+  if(!_resizingCols)return;
+  _resizingCols=false;
+  colResizer.classList.remove('active');
+  document.body.style.cursor='';
+  document.body.style.userSelect='';
+  const finalWidth=parseFloat(chartCol.style.width)||chartCol.getBoundingClientRect().width;
+  saveChartColWidth(finalWidth);
+});
+
+window.addEventListener('resize',()=>{refreshResizableColumns();});
 
 function openAllCards(){
   if(_allCardsOpen){ closeAllCards(); return; }
@@ -1484,6 +1584,7 @@ function openAllCards(){
   document.getElementById('app-layout').appendChild(_drawer);
 
   _allCardsOpen = true;
+  refreshResizableColumns();
   // The Open All button is hidden in always-on mode; guard the textContent set
   const _btn = document.getElementById('open-all-btn');
   if(_btn) _btn.textContent = '▲ Close All';
@@ -1494,6 +1595,7 @@ function openAllCards(){
 function closeAllCards(){
   if(_drawer){ _drawer.remove(); _drawer = null; }
   _allCardsOpen = false;
+  refreshResizableColumns();
   const btn = document.getElementById('open-all-btn');
   if(btn) btn.textContent = '▼ Open All';
 }
@@ -1517,6 +1619,15 @@ const openAllBtnEl=document.getElementById('open-all-btn');
 if(openAllBtnEl) openAllBtnEl.style.display='none';
 
 // ── Chrome toggle (collapse / expand the page header area) ────────────────────
+// Auto-collapse chrome 10s after load so the timeline reclaims vertical space
+// without requiring a manual click. Idempotent — checks the class first so a
+// user who has already clicked Hide is not toggled back to expanded.
+setTimeout(function(){
+  if(!document.body.classList.contains('chrome-collapsed')){
+    document.getElementById('chrome-toggle').click();
+  }
+}, 10000);
+
 document.getElementById('chrome-toggle').addEventListener('click',()=>{
   document.body.classList.toggle('chrome-collapsed');
   const btn=document.getElementById('chrome-toggle');
