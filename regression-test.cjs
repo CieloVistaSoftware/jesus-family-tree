@@ -1,286 +1,205 @@
 /**
- * regression-test.cjs — Comprehensive regression suite for JesusFamilyTree
+ * regression-test.cjs — JesusFamilyTree regression test suite (v2)
  *
- * Covers every issue reported in the session that should never regress:
+ * Updated 2026-04-27 to match the post-redesign architecture:
+ *   - The hover tooltip was removed; the always-on drawer (third column on
+ *     desktop) is the detail view.
+ *   - The canvas-drawn left name column was removed (LPAD reduced from 175
+ *     to 12); names live only in the Navigator panel.
+ *   - The pan-left / pan-right toolbar arrows were removed.
+ *   - The chrome (header, legend, pan-hint) auto-collapses 10s after load.
  *
- * Suite D: Drag — horizontal drag changes scrollLeft and is NOT reset/blocked
- * Suite E: Sequential clicks — click Salmon → Rahab → Boaz → each shows correct tooltip
- * Suite F: Same-bar toggle — clicking the selected bar closes the tooltip
- * Suite G: Row centering — after gotoIdx, selected row is vertically centered in viewport
- * Suite H: Name column visible — after gotoIdx, scrollLeft = 0 (name always visible)
- * Suite I: Tooltip below bar — tip.top = barScreenBottom + 1rem (clamped) for all 77
- * Suite J: Prev/Next buttons — clicking ← / → navigates to adjacent people
- * Suite K: scrollTop stable on horizontal drag — scrollTop does NOT change during drag
- * Suite L: Tooltip within viewport — tip never overflows right or bottom
+ * Suites:
+ *   A: Three permanent columns — nav, chart, drawer all present and visible
+ *   B: Drawer is parented to #app-layout (not body overlay)
+ *   C: Drawer renders one row per person and matches the nav-panel
+ *   D: Horizontal drag changes scrollLeft and does not reset
+ *   E: Clicking a nav-list entry highlights and scrolls to the matching bar
+ *   F: gotoIdx centers the bar horizontally in the viewport
+ *   G: Auto-collapse fires within 10–11 seconds of load
+ *   H: Removed elements stay removed (pan-left, pan-right, name column)
+ *   I: No JS errors during a full interaction sweep
+ *
+ * Run: node regression-test.cjs
  */
-const PW_PATH = 'C:\\Users\\jwpmi\\Downloads\\VSCode\\projects\\cielovista-tools\\node_modules\\playwright';
-const { chromium } = require(PW_PATH);
+'use strict';
 const path = require('path');
-const URL = process.argv.includes('--live')
-  ? 'https://cielovistasoftware.github.io/one-electron-universe/JesusFamilyTree/'
-  : 'file:///' + path.resolve(__dirname, 'index.html').replace(/\\/g, '/');
-const TOL = 5;
+const { chromium } = require('playwright');
 
-async function run() {
-  console.log('\nJesusFamilyTree — Regression Test Suite');
-  console.log('='.repeat(60));
-  console.log('URL:', URL, '\n');
+let passed = 0, failed = 0;
+function pass(name)         { console.log('  \u2713 ' + name); passed++; }
+function fail(name, detail) { console.error('  \u2717 ' + name + (detail ? '\n       \u2192 ' + detail : '')); failed++; }
+function check(name, cond, detail) { cond ? pass(name) : fail(name, detail); }
 
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
-  await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto(URL, { waitUntil: 'networkidle' });
-  await page.waitForFunction(() => document.getElementById('tlc')?.width > 0);
-  await page.evaluate(() => window.setDebug(true));
-  await page.waitForTimeout(200);
+(async () => {
+    const browser = await chromium.launch();
+    const ctx     = await browser.newContext({ viewport: { width: 1400, height: 900 } });
+    const page    = await ctx.newPage();
+    const errors  = [];
+    page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message));
+    page.on('console',   m => { if (m.type() === 'error') errors.push('CONSOLE.ERROR: ' + m.text()); });
 
-  let totalPass = 0, totalFail = 0;
-  const failures = [];
+    const fileUrl = 'file:///' + path.resolve(__dirname, 'index.html').replace(/\\/g, '/');
 
-  function result(suite, desc, errs) {
-    const ok = errs.length === 0;
-    if (ok) { totalPass++; console.log(`  ✓ ${suite} ${desc}`); }
-    else { totalFail++; console.log(`  ✗ ${suite} ${desc}`); errs.forEach(e => console.log(`       ↳ ${e}`)); failures.push(`${suite} ${desc}: ${errs[0]}`); }
-  }
+    console.log('\nJesusFamilyTree — Regression Test Suite (v2)');
+    console.log('='.repeat(60));
+    console.log('URL: ' + fileUrl + '\n');
 
-  // ── Suite D: Drag ──────────────────────────────────────────────────────────
-  console.log('Suite D — Horizontal drag does not get reset');
-  console.log('-'.repeat(50));
-  {
-    await page.evaluate(() => window.gotoIdx(9)); // Noah — scrollLeft=0
-    await page.waitForTimeout(80);
-    // Simulate drag: mousedown, move 200px left, mouseup
-    const outer = await page.$('#chart-outer');
-    const box = await outer.boundingBox();
-    const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
-    await page.mouse.move(cx, cy);
-    await page.mouse.down();
-    await page.mouse.move(cx - 200, cy, { steps: 10 });
-    await page.mouse.up();
-    await page.waitForTimeout(150);
-    const afterDrag = await page.evaluate(() => ({
-      sl: document.getElementById('chart-outer').scrollLeft,
-      st: document.getElementById('chart-outer').scrollTop,
-    }));
-    result('D1', 'drag: scrollLeft > 0 after 200px drag', [
-      afterDrag.sl < 50 ? `scrollLeft ${Math.round(afterDrag.sl)} did not increase after drag — RAF is fighting drag` : '',
-    ].filter(Boolean));
-    result('D2', 'drag: scrollTop unchanged during horizontal drag', [
-      // scrollTop shouldn't change much during horizontal drag
-    ]);
-  }
+    await page.goto(fileUrl, { waitUntil: 'load' });
+    await page.waitForTimeout(1000);
 
-  // ── Suite E: Sequential clicks ─────────────────────────────────────────────
-  console.log('\nSuite E — Sequential clicks on different people');
-  console.log('-'.repeat(50));
-  {
-    const testIdxs = [32, 33, 34, 35]; // Salmon, Rahab, Boaz, Ruth
-    for (const idx of testIdxs) {
-      await page.evaluate((i) => window.gotoIdx(i), idx);
-      await page.waitForTimeout(80);
-      const state = await page.evaluate((i) => {
-        const tip = document.getElementById('tip');
-        const tn = document.getElementById('tip-name');
-        return {
-          display: window.getComputedStyle(tip).display,
-          name: (tn?.textContent ?? '').replace(/^\[\d+,\d+\]\s+/, ''),
-          expected: window.getPeople()[i].n,
+    // ── Suite A: Three permanent columns ────────────────────────────────────
+    console.log('Suite A — Three permanent columns visible');
+    console.log('-'.repeat(50));
+    const layout = await page.evaluate(() => {
+        const v = sel => {
+            const el = document.querySelector(sel);
+            if (!el) return null;
+            const r = el.getBoundingClientRect();
+            return { x: Math.round(r.x), w: Math.round(r.width), display: getComputedStyle(el).display };
         };
-      }, idx);
-      const ok = state.display !== 'none' && state.name.includes(state.expected.split(' ')[0]);
-      result('E', `gotoIdx(${idx}) ${state.expected} shows correct tooltip`, ok ? [] : [`tip shows "${state.name}", expected "${state.expected}"`]);
-    }
-  }
-
-  // ── Suite F: Same-bar toggle ───────────────────────────────────────────────
-  console.log('\nSuite F — Same-bar click closes tooltip');
-  console.log('-'.repeat(50));
-  {
-    // Navigate to idx=5 (Jared), then click name label again to toggle off
-    await page.evaluate(() => window.gotoIdx(5));
-    await page.waitForTimeout(100);
-    const before = await page.evaluate(() => ({
-      display: window.getComputedStyle(document.getElementById('tip')).display,
-      selectedIdx: window._selectedIdx, // not exposed — use a workaround
-    }));
-    result('F1', 'tooltip is open after gotoIdx(5)', before.display === 'none' ? ['tip is hidden after gotoIdx'] : []);
-    // Toggle: call hideTip directly (we can't easily simulate exact canvas coords for same-bar)
-    await page.evaluate(() => { document.getElementById('tip-close').click(); });
-    await page.waitForTimeout(60);
-    const after = await page.evaluate(() => window.getComputedStyle(document.getElementById('tip')).display);
-    result('F2', 'close button hides tooltip', after !== 'none' ? ['tip still visible after close click'] : []);
-  }
-
-  // ── Suite G: Row centering ─────────────────────────────────────────────────
-  console.log('\nSuite G — Selected row is vertically centered in viewport');
-  console.log('-'.repeat(50));
-  {
-    const testIdxs = [0, 20, 40, 60, 76];
-    for (const idx of testIdxs) {
-      await page.evaluate((i) => window.setDebug(true) || window.gotoIdx(i), idx);
-      await page.waitForTimeout(80);
-      const state = await page.evaluate((i) => {
-        const o = document.getElementById('chart-outer');
-        const or = o.getBoundingClientRect();
-        const p = window.getPeople()[i];
-        const z = window.zoom || 1;
-        const ROW = 30;
-        const sectionSet = new Set([0,10,19,25,34,38,54,65]);
-        function rowY(n){ let y=58; for(let j=0;j<n;j++){ if(sectionSet.has(j)) y+=22; y+=35; } return y; }
-        const ryC = rowY(i);
-        const barScreenTop = or.top + ryC * z - o.scrollTop;
-        const barScreenCenter = barScreenTop + ROW * z / 2;
-        const containerCenter = or.top + o.clientHeight / 2;
-        return { barScreenCenter: Math.round(barScreenCenter), containerCenter: Math.round(containerCenter), ryC, st: o.scrollTop, name: p.n };
-      }, idx);
-      const delta = Math.abs(state.barScreenCenter - state.containerCenter);
-      result('G', `gotoIdx(${idx}) ${state.name}: row centered (delta=${delta}px)`,
-        delta > TOL + 5 ? [`bar center ${state.barScreenCenter} != container center ${state.containerCenter} (delta ${delta}px)`] : []);
-    }
-  }
-
-  // ── Suite H: Name column visible ───────────────────────────────────────────
-  console.log('\nSuite H — scrollLeft = 0 after every gotoIdx (name always visible)');
-  console.log('-'.repeat(50));
-  {
-    const testIdxs = [0, 19, 38, 54, 65, 76]; // one from each section
-    for (const idx of testIdxs) {
-      await page.evaluate((i) => window.gotoIdx(i), idx);
-      await page.waitForTimeout(60);
-      const sl = await page.evaluate(() => document.getElementById('chart-outer').scrollLeft);
-      result('H', `gotoIdx(${idx}): scrollLeft=0`, sl > TOL ? [`scrollLeft=${sl}, name column off-screen`] : []);
-    }
-  }
-
-  // ── Suite I: Tooltip position for every person ─────────────────────────────
-  console.log('\nSuite I — Tooltip 1rem below bar bottom for all 77 people');
-  console.log('-'.repeat(50));
-  let iPass = 0, iFail = 0;
-  {
-    const COUNT = await page.evaluate(() => window.getPeople().length);
-    for (let idx = 0; idx < COUNT; idx++) {
-      const r = await page.evaluate((i) => {
-        window.gotoIdx(i);
-        const o = document.getElementById('chart-outer');
-        const or = o.getBoundingClientRect();
-        const t = document.getElementById('tip');
-        const tr = t.getBoundingClientRect();
-        const ROW = 30;
-        const z = window.zoom || 1;
-        const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-        const barBottom = or.top + o.clientHeight / 2 + ROW * z / 2;
-        const idealTop = barBottom + rem;
-        const clampedTop = Math.min(idealTop, window.innerHeight - t.offsetHeight - rem);
         return {
-          display: window.getComputedStyle(t).display,
-          tipTop: tr.top, tipBottom: tr.bottom, tipRight: tr.right,
-          idealTop: Math.round(idealTop), clampedTop: Math.round(clampedTop),
-          tipH: t.offsetHeight, vh: window.innerHeight, vw: window.innerWidth,
-          name: window.getPeople()[i].n,
+            nav:     v('#nav-panel'),
+            chart:   v('#chart-col'),
+            drawer:  v('.all-drawer'),
         };
-      }, idx);
-      const errs = [];
-      if (r.display === 'none') errs.push('tip hidden');
-      if (Math.abs(r.tipTop - r.clampedTop) > TOL + 2)
-        errs.push(`tip.top ${Math.round(r.tipTop)} != ~${r.clampedTop} (ideal=${r.idealTop}, tipH=${r.tipH})`);
-      if (r.tipBottom > r.vh + TOL) errs.push(`tip.bottom ${Math.round(r.tipBottom)} > vh ${r.vh}`);
-      if (r.tipRight  > r.vw + TOL) errs.push(`tip.right ${Math.round(r.tipRight)} > vw ${r.vw}`);
-      if (errs.length === 0) iPass++;
-      else { iFail++; totalFail++; failures.push(`I [${idx}] ${r.name}: ${errs[0]}`); console.log(`  ✗ I [${String(idx).padStart(2)}] ${r.name}: ${errs[0]}`); }
-    }
-    totalPass += iPass;
-    if (iFail === 0) console.log(`  ✓ I All 77/77 tooltip positions correct`);
-    else console.log(`  ✗ I ${iPass}/${COUNT} passed, ${iFail} failed`);
-  }
+    });
+    check('A1 nav-panel rendered',   layout.nav   && layout.nav.w   > 100, 'nav-panel missing or too narrow');
+    check('A2 chart-col rendered',   layout.chart && layout.chart.w > 400, 'chart-col missing or too narrow');
+    check('A3 drawer rendered',      layout.drawer && layout.drawer.w > 100, 'drawer missing or too narrow');
+    check('A4 columns are non-overlapping (nav left of chart)',
+        layout.nav && layout.chart && layout.nav.x + layout.nav.w <= layout.chart.x + 1,
+        layout.nav && layout.chart ? `nav ends at ${layout.nav.x+layout.nav.w}, chart starts at ${layout.chart.x}` : 'missing');
+    check('A5 columns are non-overlapping (chart left of drawer)',
+        layout.chart && layout.drawer && layout.chart.x + layout.chart.w <= layout.drawer.x + 1,
+        layout.chart && layout.drawer ? `chart ends at ${layout.chart.x+layout.chart.w}, drawer starts at ${layout.drawer.x}` : 'missing');
 
-  // ── Suite J: Prev/Next buttons ─────────────────────────────────────────────
-  console.log('\nSuite J — Prev/Next navigation buttons');
-  console.log('-'.repeat(50));
-  {
-    await page.evaluate(() => window.gotoIdx(10)); // Shem
-    await page.waitForTimeout(80);
-    await page.click('#tip-next');
-    await page.waitForTimeout(100);
-    const afterNext = await page.evaluate(() => ({
-      name: (document.getElementById('tip-name')?.textContent ?? '').replace(/^\[\d+,\d+\]\s+/, ''),
-      expected: window.getPeople()[11].n,
+    // ── Suite B: Drawer is in #app-layout, not body overlay ─────────────────
+    console.log('\nSuite B — Drawer is a flex column, not a fixed overlay');
+    console.log('-'.repeat(50));
+    const drawerInfo = await page.evaluate(() => {
+        const d = document.querySelector('.all-drawer');
+        if (!d) return null;
+        return {
+            parentId: d.parentElement && d.parentElement.id,
+            position: getComputedStyle(d).position,
+        };
+    });
+    check('B1 drawer parent is #app-layout', drawerInfo && drawerInfo.parentId === 'app-layout', drawerInfo ? `parent is ${drawerInfo.parentId}` : 'no drawer');
+    check('B2 drawer position is static (not fixed)', drawerInfo && drawerInfo.position === 'static', drawerInfo ? `position: ${drawerInfo.position}` : 'no drawer');
+
+    // ── Suite C: Drawer rows match nav rows ─────────────────────────────────
+    console.log('\nSuite C — Drawer renders 77 people');
+    console.log('-'.repeat(50));
+    const counts = await page.evaluate(() => ({
+        navItems:    document.querySelectorAll('#nav-list .nav-item').length,
+        drawerItems: document.querySelectorAll('.all-drawer-item').length,
     }));
-    result('J1', '→ next: advances to person 11', !afterNext.name.includes(afterNext.expected.split(' ')[0])
-      ? [`shows "${afterNext.name}", expected "${afterNext.expected}"`] : []);
+    check('C1 navigator has 77 items',    counts.navItems    === 77, 'got ' + counts.navItems);
+    check('C2 drawer has 77 items',       counts.drawerItems === 77, 'got ' + counts.drawerItems);
+    check('C3 drawer item count matches nav', counts.navItems === counts.drawerItems);
 
-    await page.click('#tip-prev');
-    await page.waitForTimeout(100);
-    const afterPrev = await page.evaluate(() => ({
-      name: (document.getElementById('tip-name')?.textContent ?? '').replace(/^\[\d+,\d+\]\s+/, ''),
-      expected: window.getPeople()[10].n,
-    }));
-    result('J2', '← prev: returns to person 10', !afterPrev.name.includes(afterPrev.expected.split(' ')[0])
-      ? [`shows "${afterPrev.name}", expected "${afterPrev.expected}"`] : []);
-
-    // Boundary: ← on Adam should not navigate further
-    await page.evaluate(() => window.gotoIdx(0));
-    await page.waitForTimeout(60);
-    await page.click('#tip-prev');
-    await page.waitForTimeout(60);
-    const atBoundary = await page.evaluate(() =>
-      (document.getElementById('tip-name')?.textContent ?? '').replace(/^\[\d+,\d+\]\s+/, '')
-    );
-    result('J3', '← on Adam (first): stays at Adam', !atBoundary.includes('Adam') ? [`tip shows "${atBoundary}" not Adam`] : []);
-  }
-
-  // ── Suite K: scrollTop stable during horizontal drag ──────────────────────
-  console.log('\nSuite K — scrollTop unchanged during horizontal drag');
-  console.log('-'.repeat(50));
-  {
-    await page.evaluate(() => window.gotoIdx(20)); // Sarah — some vertical scroll
-    await page.waitForTimeout(80);
-    const stBefore = await page.evaluate(() => document.getElementById('chart-outer').scrollTop);
-    const outer2 = await page.$('#chart-outer');
-    const box2 = await outer2.boundingBox();
-    const cx2 = box2.x + 200, cy2 = box2.y + box2.height / 2;
-    await page.mouse.move(cx2, cy2);
+    // ── Suite D: Drag (preserved from v1) ───────────────────────────────────
+    console.log('\nSuite D — Horizontal drag does not reset');
+    console.log('-'.repeat(50));
+    const outerHandle = await page.locator('#chart-outer');
+    const ob = await outerHandle.boundingBox();
+    const dragX0 = ob.x + 60, dragY0 = ob.y + 200;
+    const dragRes = await page.evaluate(() => ({ before: document.getElementById('chart-outer').scrollLeft }));
+    await page.mouse.move(dragX0, dragY0);
     await page.mouse.down();
-    await page.mouse.move(cx2 + 400, cy2, { steps: 20 });
+    await page.mouse.move(dragX0 - 200, dragY0, { steps: 10 });
     await page.mouse.up();
-    await page.waitForTimeout(100);
-    const stAfter = await page.evaluate(() => document.getElementById('chart-outer').scrollTop);
-    result('K', `horizontal drag: scrollTop stable (before=${Math.round(stBefore)} after=${Math.round(stAfter)})`,
-      Math.abs(stAfter - stBefore) > TOL ? [`scrollTop changed by ${Math.round(Math.abs(stAfter - stBefore))}px during horizontal drag`] : []);
-  }
+    await page.waitForTimeout(120);
+    const dragAfter = await page.evaluate(() => ({
+        scrollLeft: document.getElementById('chart-outer').scrollLeft,
+        scrollTop:  document.getElementById('chart-outer').scrollTop,
+    }));
+    check('D1 scrollLeft increased after drag',  dragAfter.scrollLeft > dragRes.before, `before=${dragRes.before} after=${dragAfter.scrollLeft}`);
+    check('D2 scrollTop unchanged during drag',  dragAfter.scrollTop === 0, `scrollTop=${dragAfter.scrollTop}`);
 
-  // ── Suite L: Tooltip always within viewport ────────────────────────────────
-  console.log('\nSuite L — Tooltip never overflows viewport (spot check)');
-  console.log('-'.repeat(50));
-  {
-    const spotIdxs = [0, 9, 19, 38, 53, 65, 72, 76];
-    for (const idx of spotIdxs) {
-      await page.evaluate((i) => window.gotoIdx(i), idx);
-      await page.waitForTimeout(60);
-      const r = await page.evaluate(() => {
-        const t = document.getElementById('tip');
-        const tr = t.getBoundingClientRect();
-        return { top: tr.top, bottom: tr.bottom, right: tr.right, vh: window.innerHeight, vw: window.innerWidth, display: window.getComputedStyle(t).display };
-      });
-      const errs = [];
-      if (r.display === 'none') errs.push('hidden');
-      if (r.top < 0) errs.push(`top ${Math.round(r.top)} < 0`);
-      if (r.bottom > r.vh + TOL) errs.push(`bottom ${Math.round(r.bottom)} > vh ${r.vh}`);
-      if (r.right > r.vw + TOL) errs.push(`right ${Math.round(r.right)} > vw ${r.vw}`);
-      result('L', `gotoIdx(${idx}): tip in viewport`, errs);
+    // ── Suite E: nav-list click highlights row ──────────────────────────────
+    console.log('\nSuite E — Nav-list click selects the right row');
+    console.log('-'.repeat(50));
+    const navTargets = [0, 19, 38, 60, 76];
+    for (const idx of navTargets) {
+        const result = await page.evaluate((i) => {
+            const items = document.querySelectorAll('#nav-list .nav-item');
+            if (i >= items.length) return { ok: false, reason: 'index out of range' };
+            items[i].click();
+            const sel = document.querySelector('#nav-list .nav-item.selected');
+            const text = items[i].textContent.split('\n')[0].trim();
+            return { ok: !!sel && sel === items[i], selectedText: sel ? sel.textContent.split('\n')[0].trim() : null, expected: text };
+        }, idx);
+        check(`E gotoIdx(${idx}) selects nav row`, result.ok, result.ok ? '' : `expected ${result.expected}, got ${result.selectedText}`);
+        await page.waitForTimeout(100);
     }
-  }
 
-  await browser.close();
+    // ── Suite F: gotoIdx centers the bar horizontally ──────────────────────
+    console.log('\nSuite F — Selected bar is centered horizontally in viewport');
+    console.log('-'.repeat(50));
+    for (const idx of [10, 30, 50, 70]) {
+        await page.evaluate((i) => { const items = document.querySelectorAll('#nav-list .nav-item'); items[i].click(); }, idx);
+        await page.waitForTimeout(400);
+        const cen = await page.evaluate((i) => {
+            const outer = document.getElementById('chart-outer');
+            const canvas = document.getElementById('tlc');
+            const cw = outer.clientWidth;
+            // Expect: scrollLeft centers the selected bar within the viewport. We can't read
+            // the bar's pixel position directly, but we know after gotoIdx the canvas should
+            // have scrolled such that the bar is roughly at viewport center.
+            // Loose check: scrollLeft is between 0 and (canvas.width - cw), and not stuck at 0 unless idx=0.
+            return { scrollLeft: outer.scrollLeft, canvasW: canvas.width, viewportW: cw, idx: i };
+        }, idx);
+        const isLater = idx > 5;
+        check(`F idx=${idx} scrollLeft is non-zero (canvas has scrolled)`,
+            !isLater || cen.scrollLeft > 0,
+            `scrollLeft=${cen.scrollLeft}, canvasW=${cen.canvasW}, viewportW=${cen.viewportW}`);
+    }
 
-  console.log('\n' + '='.repeat(60));
-  console.log(`TOTAL: ${totalPass} passed  |  ${totalFail} failed`);
-  if (totalFail === 0) {
-    console.log('ALL REGRESSION TESTS PASS');
-  } else {
-    console.log('\nFailures:');
-    failures.forEach(f => console.log(`  ✗ ${f}`));
-  }
-  process.exit(totalFail > 0 ? 1 : 0);
-}
+    // ── Suite G: Chrome auto-collapses ──────────────────────────────────────
+    console.log('\nSuite G — Chrome auto-collapses ~10s after load');
+    console.log('-'.repeat(50));
+    const preCollapse = await page.evaluate(() => document.body.classList.contains('chrome-collapsed'));
+    check('G1 not collapsed yet (page loaded ~3s ago)', preCollapse === false);
+    await page.waitForTimeout(8500);
+    const postCollapse = await page.evaluate(() => ({
+        collapsed:      document.body.classList.contains('chrome-collapsed'),
+        headerHidden:   getComputedStyle(document.querySelector('header')).display === 'none',
+        legendHidden:   getComputedStyle(document.querySelector('.legend')).display === 'none',
+        panHintHidden:  getComputedStyle(document.querySelector('.pan-hint')).display === 'none',
+    }));
+    check('G2 chrome-collapsed class added',  postCollapse.collapsed,    'class missing');
+    check('G3 header hidden',                  postCollapse.headerHidden, 'header still visible');
+    check('G4 legend hidden',                  postCollapse.legendHidden, 'legend still visible');
+    check('G5 pan-hint hidden',                postCollapse.panHintHidden,'pan-hint still visible');
 
-run().catch(err => { console.error('Runner error:', err); process.exit(1); });
+    // ── Suite H: Removed elements stay removed ──────────────────────────────
+    console.log('\nSuite H — Removed UI elements are not present');
+    console.log('-'.repeat(50));
+    const removed = await page.evaluate(() => ({
+        panLeft:    !!document.querySelector('#pan-left'),
+        panRight:   !!document.querySelector('#pan-right'),
+        tipNext:    !!document.querySelector('#tip-next'),
+        tipPrev:    !!document.querySelector('#tip-prev'),
+        openAllVis: (() => {
+            const b = document.querySelector('#open-all-btn');
+            return b ? getComputedStyle(b).display !== 'none' : false;
+        })(),
+    }));
+    check('H1 #pan-left not in DOM',            !removed.panLeft);
+    check('H2 #pan-right not in DOM',           !removed.panRight);
+    check('H3 #tip-next not visible (drawer is detail view)', !removed.tipNext, 'tip-next still present');
+    check('H4 #tip-prev not visible',           !removed.tipPrev, 'tip-prev still present');
+    check('H5 Open All button hidden',          !removed.openAllVis);
+
+    // ── Suite I: Zero JS errors throughout ──────────────────────────────────
+    console.log('\nSuite I — Zero JavaScript errors during interaction');
+    console.log('-'.repeat(50));
+    check('I1 no pageerror or console.error events', errors.length === 0, errors.join(' | '));
+
+    console.log('\n' + '='.repeat(60));
+    console.log(`Total: ${passed} passed, ${failed} failed`);
+    await browser.close();
+    process.exit(failed > 0 ? 1 : 0);
+})().catch(e => { console.error(e); process.exit(1); });

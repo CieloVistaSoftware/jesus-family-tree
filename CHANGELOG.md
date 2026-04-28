@@ -1,3 +1,17 @@
+---
+title: Changelog
+description: All notable changes to this project are documented in this file.
+project: JesusFamilyTree
+category: 300 — Dev Workflow & Process
+relativePath: CHANGELOG.md
+created: 2026-04-26
+updated: 2026-04-27
+version: 1.0.0
+author: CieloVista Software
+status: active
+tags: [changelog, unreleased, added]
+---
+
 # Changelog
 
 All notable changes to this project are documented in this file.
@@ -17,6 +31,10 @@ All notable changes to this project are documented in this file.
 - Toolbar cleanup: removed legacy Tour keyboard hooks and normalized toolbar control sizing around pan, zoom, and Open All controls.
 - Desktop load now auto-opens the right-side "All 77 people" drawer so the full list is immediately visible.
 - Two-column readability update: widened the left name column, added a Timeline header on the right column, and expanded Navigator row metadata to include year plus key identity info.
+- The top instructional subtitle line now auto-hides after 10 seconds to reduce persistent visual clutter once the page is loaded.
+- Added a visible draggable divider between Timeline and the right drawer; users can now resize the Timeline column width interactively down to a 1rem minimum.
+- Timeline divider width is now persisted per browser in localStorage and restored on reload.
+- Removed the drawer's old hard minimum width so the right column can collapse below its previous floor during resize.
 - `gotoIdx` now performs synchronous scroll positioning. Sets `outer.scrollLeft = clamp(bxC*zoom - REM, 0, max)` and `outer.scrollTop = ryC*zoom - (targetY - chart.top)` in one frame, plus sets `_prevScrollTop2 = newScrollTop` to prevent the scroll listener from clobbering the call.
 - Selected item now top-aligns at a shared screen Y across Navigator, chart, and drawer simultaneously, instead of each panel scrolling independently.
 - Alignment target Y uses `commonAlignmentTargetY()` which returns `max(chart.top, nav-list.top, drawer-list.top) + REM` — the most-constrained anchor — so selected items always land inside every container's viewport regardless of which panels are open or what window size is in use.

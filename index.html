@@ -86,6 +86,8 @@ footer{text-align:center;margin-top:36px;padding:18px;border-top:1px solid #1418
 .all-drawer-item{padding:13px 16px;border-bottom:1px solid #1a2030;border-left:4px solid #2a3458;cursor:pointer;font-size:12px;line-height:1.65;transition:background .12s}
 .all-drawer-item:hover{background:#101523}
 .all-drawer-item.selected{background:rgba(255,255,255,0.06);border-left-color:#ffffff!important;box-shadow:inset 0 0 0 1px #ffffff,0 0 10px rgba(255,255,255,0.35)}
+.all-drawer-item *{min-width:0;overflow-wrap:anywhere;word-break:break-word}
+.all-drawer-item a.tl{white-space:normal}
 /* ── Navigator + two-column layout ── */
 #app-layout{display:flex;align-items:stretch;gap:0;}
 #nav-panel{width:240px;min-width:220px;flex-shrink:0;display:flex;flex-direction:column;background:#0a0d18;border-right:1px solid #1a2030;height:calc(100vh - 180px);}
@@ -691,6 +693,7 @@ function applyZoom(nextZoom,anchorClientX){
   syncCanvasResolution();
   outer.scrollLeft=anchorWorldX*ratio-anchorViewportX;
   zoomVal.textContent=Math.round(zoom*100)+'%';
+  updateThreeColumnSizes();
   draw();
 }
 
@@ -718,6 +721,7 @@ function rr(x,y,w,h,r){
 
 function draw(){
   ctx.clearRect(0,0,CVS_W,CVS_H);
+  const BAR_TEXT_PAD=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;
   for(let yr=-4000;yr<=120;yr+=200){
     const x=yx(yr);
     ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=0.5;ctx.setLineDash([]);
@@ -779,7 +783,16 @@ function draw(){
 
     const bx=Math.max(yx(p.b),LPAD);
     const endYr=p.d!==null?p.d:Math.min(p.b+70,YE-5);
-    const bw=Math.max(yx(endYr)-bx,5);
+    const age=calcAge(p);
+    const ageStr=age!==null?age+'y':'?';
+    const dateStr=fmtYr(p.b)+' – '+fmtYr(p.d);
+    const line2=dateStr+'  ·  '+ageStr;
+    ctx.font='600 9px system-ui';
+    const line1W=ctx.measureText(p.n).width;
+    ctx.font='400 8px system-ui';
+    const line2W=ctx.measureText(line2).width;
+    const minContextW=Math.max(line1W,line2W)+BAR_TEXT_PAD*2;
+    const bw=Math.max(yx(endYr)-bx,Math.max(5,minContextW));
     const by=ry+4,bh=ROW-8;
     const isSel=i===selectedIdx;
 
@@ -793,17 +806,14 @@ function draw(){
 
     ctx.save();
     ctx.beginPath();ctx.rect(bx+2,by,Math.max(bw-4,0),bh);ctx.clip();
-    const age=calcAge(p);
-    const ageStr=age!==null?age+'y':'?';
-    const dateStr=fmtYr(p.b)+' – '+fmtYr(p.d);
     if(bw>=16){
       ctx.textAlign='left';
       ctx.fillStyle=p.g==='jes'?'#FFF8C0':col.t;
       ctx.font='600 9px system-ui';
-      ctx.fillText(p.n,bx+5,by+9);
+      ctx.fillText(p.n,bx+BAR_TEXT_PAD,by+9);
       ctx.fillStyle=col.s;
       ctx.font='400 8px system-ui';
-      ctx.fillText(dateStr+'  ·  '+ageStr,bx+5,by+18);
+      ctx.fillText(line2,bx+BAR_TEXT_PAD,by+18);
     }
     ctx.restore();
     if(p.d===null){
@@ -1382,10 +1392,12 @@ window.addEventListener('load',function(){
     draw();
     navScrollTo(0);
     if(!isMobile) openAllCards();
+    updateThreeColumnSizes();
   },100);
   setTimeout(function(){
     const introNote=document.querySelector('.intro-note');
     if(introNote) introNote.style.display='none';
+    updateThreeColumnSizes();
   },10000);
 });
 
@@ -1455,6 +1467,20 @@ const CHART_COL_WIDTH_KEY='jft.chartColWidthPx';
 let _resizingCols=false;
 let _resizeStartX=0;
 let _resizeStartW=0;
+
+function updateThreeColumnSizes(){
+  if(window.innerWidth<=768){
+    navPanel.style.height='';
+    outer.style.height='';
+    if(_drawer) _drawer.style.height='';
+    return;
+  }
+  const top=appLayout.getBoundingClientRect().top;
+  const h=Math.max(220,Math.floor(window.innerHeight-top-8));
+  navPanel.style.height=h+'px';
+  outer.style.height=h+'px';
+  if(_drawer) _drawer.style.height=h+'px';
+}
 
 function remPx(rem){
   return (parseFloat(getComputedStyle(document.documentElement).fontSize)||16)*rem;
@@ -1537,7 +1563,10 @@ document.addEventListener('mouseup',()=>{
   saveChartColWidth(finalWidth);
 });
 
-window.addEventListener('resize',()=>{refreshResizableColumns();});
+window.addEventListener('resize',()=>{
+  refreshResizableColumns();
+  updateThreeColumnSizes();
+});
 
 function openAllCards(){
   if(_allCardsOpen){ closeAllCards(); return; }
@@ -1585,6 +1614,7 @@ function openAllCards(){
 
   _allCardsOpen = true;
   refreshResizableColumns();
+  updateThreeColumnSizes();
   // The Open All button is hidden in always-on mode; guard the textContent set
   const _btn = document.getElementById('open-all-btn');
   if(_btn) _btn.textContent = '▲ Close All';
@@ -1596,6 +1626,7 @@ function closeAllCards(){
   if(_drawer){ _drawer.remove(); _drawer = null; }
   _allCardsOpen = false;
   refreshResizableColumns();
+  updateThreeColumnSizes();
   const btn = document.getElementById('open-all-btn');
   if(btn) btn.textContent = '▼ Open All';
 }
@@ -1633,6 +1664,7 @@ document.getElementById('chrome-toggle').addEventListener('click',()=>{
   const btn=document.getElementById('chrome-toggle');
   const collapsed=document.body.classList.contains('chrome-collapsed');
   btn.innerHTML=collapsed ? '&#9660; Show' : '&#9650; Hide';
+  updateThreeColumnSizes();
   // Viewport size changed — re-align the selected item so the three panels stay lined up.
   if(selectedIdx>=0){
     navScrollTo(selectedIdx);

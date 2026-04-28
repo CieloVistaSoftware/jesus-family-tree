@@ -1,3 +1,17 @@
+---
+title: CLAUDE.md - JesusFamilyTree
+description: 1. Read this file first. 2. Open README.md and CHANGELOG.md. 3. Review test scripts before changing tooltip or navigation behavior.
+project: JesusFamilyTree
+category: 000 — Meta / Session / Status
+relativePath: CLAUDE.md
+created: 2026-04-23
+updated: 2026-04-27
+version: 1.0.0
+author: CieloVista Software
+status: active
+tags: [claude, claudemd, jesusfamilytree]
+---
+
 # CLAUDE.md - JesusFamilyTree
 
 ## Session Start

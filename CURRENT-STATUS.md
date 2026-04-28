@@ -1,6 +1,20 @@
+---
+title: CURRENT-STATUS.md — jesus-family-tree
+description: - Working copy: C:\dev\jesus-family-tree - Repo: https://github.com/CieloVistaSoftware/jesus-family-tree - Live URL: https://cielovistasoftware.git…
+project: JesusFamilyTree
+category: 000 — Meta / Session / Status
+relativePath: CURRENT-STATUS.md
+created: 2026-04-23
+updated: 2026-04-27
+version: 1.0.0
+author: CieloVista Software
+status: active
+tags: [current, status, currentstatusmd]
+---
+
 # CURRENT-STATUS.md — jesus-family-tree
 
-## 🅿️ PARKING LOT — 2026-04-23 (repo extraction)
+## 🅿️ PARKING LOT — 2026-04-25
 
 ### Files
 - Working copy: `C:\dev\jesus-family-tree`
@@ -9,14 +23,20 @@
 - Kanban board (#5): https://github.com/users/CieloVistaSoftware/projects/5
 
 ### Last action
-Shipped #14 (commit `b20ff2e`): scroll-driven auto-select now snaps the chart horizontally so the newly-active bar sits 1rem from chart-outer's left, matching `gotoIdx`'s behavior. When user scrolls vertically, each new person coming into the "active" slot triggers a `scrollLeft` update alongside the nav/drawer sync. The setting-scrollLeft-inside-a-scroll-handler concern is handled by the existing scrollTop-change guard: setting scrollLeft fires another scroll event, but that re-entry returns early because scrollTop is unchanged. No loop.
+Shipped commit `ac74a1d` (closes #4, #11):
+- **Toolbar cleanup** (#11): Removed Tour JS hooks (Escape/Space handlers, `tourStop()` calls). Renamed `.tour-btn` → `.action-btn`. Normalized control sizing.
+- **Auto-open drawer on desktop load** (#11): `window.load` now calls `openAllCards()` when `!isMobile`.
+- **Two-column layout** (#4): Nav panel widened 190→240px. `.nav-item-date` → `.nav-item-meta` with year + relationship text and ellipsis overflow. Added `#chart-panel-header` "Timeline" label matching nav header style. Both hidden on mobile.
 
-Note: the earlier commit `9a6312f` (from before this turn, not in my compacted history) had already added the 1rem left padding in `gotoIdx` and unified the scroll listener's detection anchor with `commonAlignmentTargetY()`. So today's change is just the remaining piece — horizontal snap in the scroll listener itself.
+Also filed two issues in cielovista-tools:
+- #37 — Start action does not open browser in VS Code (type:bug)
+- #35 — Browse All Commands webview needs search/filter input (type:feature)
 
 ### Next step
-1. Reload and scroll the chart vertically. Confirm that whichever person becomes active has their bar visible and sitting ~1rem from chart-outer's left edge, regardless of where horizontal scroll was before.
-2. Close #1 (Lamech scroll) once live-site check confirms — we've now addressed the underlying bug from several angles (#6 scroll-into-view, #7/#10 top-align, #12 most-constrained anchor, #14 horizontal snap on scroll). Hard to imagine it still repros.
-3. Still #2 (regression baseline) is the biggest debt. Seven behavior-changing commits this session. Would help to have a handful of headless tests that click each era's first person and assert their position across the three panels, so we stop shipping these incrementally without a safety net.
+1. Open live site and verify two-column layout looks correct on desktop + mobile breakpoint.
+2. Implement cielovista-tools#35 (search filter in Browse All Commands webview) — requires opening the cielovista-tools workspace.
+3. Implement cielovista-tools#37 (browser launch on project card start click).
+4. Pre-existing test debt: `validate.js` ~37/83 failing, `regression-test.cjs` timing out on `#tip-next` — both were failing before this session.
 
 ## Locked decisions
 - **Old URL**: Let `https://cielovistasoftware.github.io/one-electron-universe/JesusFamilyTree/` die on next one-electron-universe deploy. No redirect.

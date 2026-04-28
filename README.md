@@ -1,3 +1,17 @@
+---
+title: JesusFamilyTree
+description: Interactive Biblical genealogy visualization focused on clarity, navigation, and historical context.
+project: JesusFamilyTree
+category: 700 — Project Docs
+relativePath: README.md
+created: 2026-04-23
+updated: 2026-04-27
+version: 1.0.0
+author: CieloVista Software
+status: active
+tags: [readme, jesusfamilytree, overview]
+---
+
 # JesusFamilyTree
 
 Interactive Biblical genealogy visualization focused on clarity, navigation, and historical context.
