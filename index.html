@@ -86,7 +86,8 @@ footer{text-align:center;margin-top:36px;padding:18px;border-top:1px solid #1418
 .all-drawer-item{padding:13px 16px;border-bottom:1px solid #1a2030;border-left:4px solid #2a3458;cursor:pointer;font-size:12px;line-height:1.65;transition:background .12s}
 .all-drawer-item:hover{background:#101523}
 .all-drawer-item.selected{background:rgba(255,255,255,0.06);border-left-color:#ffffff!important;box-shadow:inset 0 0 0 1px #ffffff,0 0 10px rgba(255,255,255,0.35)}
-.all-drawer-item *{min-width:0;overflow-wrap:anywhere;word-break:break-word}
+.all-drawer-item *{min-width:0;overflow-wrap:anywhere;word-break:break-word;pointer-events:none}
+.all-drawer-item a,.all-drawer-item button,.all-drawer-item span.np{pointer-events:auto}
 .all-drawer-item a.tl{white-space:normal}
 /* ── Navigator + two-column layout ── */
 #app-layout{display:flex;align-items:stretch;gap:0;}
@@ -1183,6 +1184,20 @@ window.gotoIdx        = gotoIdx;
 window.showTipInPlace = showTipInPlace;
 window.navScrollTo    = navScrollTo;
 window.getPeople      = ()=>people;
+window.getChartMetrics = ()=>({
+  HEADER,
+  ROW,
+  GAP,
+  STEP,
+  SECTION_H,
+  LPAD,
+  RPAD,
+  YS,
+  YE,
+  CVS_W,
+  zoom,
+  sectionFrom: Array.from(sectionFromSet),
+});
 window.getDebug       = ()=>_debug;
 window.setDebug       = (v)=>{ _debug=v; draw(); };
 window.setSuppressScroll = (v)=>{ _suppressScrollListener=v; };
@@ -1289,9 +1304,7 @@ function gotoIdx(idx,_showTip){
   tip.style.visibility  = '';
   lastRow = idx;
 
-  // Drawer mode: inline tooltip is redundant; use the drawer list as single source of detail
   if(_drawer){
-    tip.style.display = 'none';
     _syncDrawerHighlight(idx);
   }
 
@@ -1426,15 +1439,19 @@ cvs.addEventListener('click',e=>{
   const nameRow=findNameLabel(e.clientX,e.clientY,rect);
   if(nameRow>=0){
     if(nameRow===selectedIdx){ selectedIdx=-1; draw(); hideTip(); navScrollTo(-1); }
-    else gotoIdx(nameRow);
+    else gotoIdx(nameRow,true);
     return;
   }
   const row=findRow(e.clientX,e.clientY,rect);
   if(row>=0){
     if(row===selectedIdx){
-      selectedIdx=-1; draw(); hideTip(); navScrollTo(-1);
+      if(tip.style.display==='block' && visibleTipRow===row){
+        selectedIdx=-1; draw(); hideTip(); navScrollTo(-1);
+      } else {
+        showTipInPlace(row);
+      }
     } else {
-      gotoIdx(row);
+      gotoIdx(row,true);
     }
   } else {
     // Empty canvas click — close and deselect

@@ -80,6 +80,10 @@ async function personIndex(page, name) {
     }, name);
 }
 
+async function chartMetrics(page) {
+    return page.evaluate(() => window.getChartMetrics ? window.getChartMetrics() : null);
+}
+
 test.beforeEach(async ({ page }) => {
     await page.goto(indexUrl);
     // Wait for the initial setTimeout(100) in window load handler to fire so
@@ -140,15 +144,16 @@ test('bar-1rem-from-left: selected bar sits ~1rem from chart-outer left edge', a
     const offset = await page.evaluate(() => {
         const outer = document.getElementById('chart-outer');
         const people = window.getPeople ? window.getPeople() : [];
+        const metrics = window.getChartMetrics ? window.getChartMetrics() : null;
         const idx = people.findIndex(p => p.n === 'David');
-        if (idx < 0) return null;
+        if (idx < 0 || !metrics) return null;
         const yx = (yr) => {
-            const YS = -4100, YE = 130, YR = YE - YS;
-            const LPAD = 175, RPAD = 50;
-            const CVS_W = window.innerWidth >= 768 ? 5000 : 2800;
+            const YS = metrics.YS, YE = metrics.YE, YR = YE - YS;
+            const LPAD = metrics.LPAD, RPAD = metrics.RPAD;
+            const CVS_W = metrics.CVS_W;
             return LPAD + (yr - YS) * (CVS_W - LPAD - RPAD) / YR;
         };
-        const bxC = Math.max(yx(people[idx].b), 175);
+        const bxC = Math.max(yx(people[idx].b), metrics.LPAD);
         const outerLeft = outer.getBoundingClientRect().left;
         const barScreenX = outerLeft + bxC * 1 - outer.scrollLeft;
         return barScreenX - outerLeft;
@@ -259,12 +264,14 @@ test('scroll-snap: vertical scroll snaps active bar so it sits ~1rem from chart-
     const offset = await page.evaluate(() => {
         const outer  = document.getElementById('chart-outer');
         const people = window.getPeople ? window.getPeople() : [];
-        const HEADER = 58, ROW = 30, GAP = 5, STEP = ROW + GAP, SECTION_H = 22;
-        const sectionFromSet = new Set([0, 10, 19, 25, 34, 38, 54, 65]);
+        const metrics = window.getChartMetrics ? window.getChartMetrics() : null;
+        if (!metrics) return null;
+        const HEADER = metrics.HEADER, ROW = metrics.ROW, GAP = metrics.GAP, STEP = metrics.STEP, SECTION_H = metrics.SECTION_H;
+        const sectionFromSet = new Set(metrics.sectionFrom);
         const yx = (yr) => {
-            const YS = -4100, YE = 130, YR = YE - YS;
-            const LPAD = 175, RPAD = 50;
-            const CVS_W = window.innerWidth >= 768 ? 5000 : 2800;
+            const YS = metrics.YS, YE = metrics.YE, YR = YE - YS;
+            const LPAD = metrics.LPAD, RPAD = metrics.RPAD;
+            const CVS_W = metrics.CVS_W;
             return LPAD + (yr - YS) * (CVS_W - LPAD - RPAD) / YR;
         };
         const REM = 16;
@@ -280,7 +287,7 @@ test('scroll-snap: vertical scroll snaps active bar so it sits ~1rem from chart-
             else break;
             ry += STEP;
         }
-        const bxC = Math.max(yx(people[activeIdx].b), 175);
+        const bxC = Math.max(yx(people[activeIdx].b), metrics.LPAD);
         const expectedScrollLeft = Math.max(0, Math.min(bxC - REM, outer.scrollWidth - outer.clientWidth));
         return {
             activeIdx,
@@ -443,26 +450,28 @@ test('tooltip-name-links: clicking a person link inside the tooltip navigates to
 test('bar-click-opens-tooltip: clicking a visible bar shows the correct person', async ({ page }) => {
     const maryIdx = await personIndex(page, 'Mary');
     expect(maryIdx).toBeGreaterThanOrEqual(0);
+    const metrics = await chartMetrics(page);
+    expect(metrics).not.toBeNull();
 
     await page.evaluate((idx) => window.gotoIdx(idx), maryIdx);
     await page.waitForTimeout(150);
 
-    const coords = await page.evaluate((idx) => {
+    const coords = await page.evaluate(({ idx, metrics }) => {
         const outer = document.getElementById('chart-outer');
         const people = window.getPeople ? window.getPeople() : [];
         const p = people[idx];
         const outerRect = outer.getBoundingClientRect();
-        const sectionSet = new Set([0, 10, 19, 25, 34, 38, 54, 65]);
-        const LPAD = 175;
-        const YS = -4100;
-        const YE = 130;
-        const CVS_W = window.innerWidth >= 768 ? 5000 : 2800;
+        const sectionSet = new Set(metrics.sectionFrom);
+        const LPAD = metrics.LPAD;
+        const YS = metrics.YS;
+        const YE = metrics.YE;
+        const CVS_W = metrics.CVS_W;
         function yx(yr) { return LPAD + (yr - YS) * (CVS_W - LPAD - 50) / (YE - YS); }
         function rowY(n) {
-            let y = 58;
+            let y = metrics.HEADER;
             for (let i = 0; i < n; i++) {
-                if (sectionSet.has(i)) y += 22;
-                y += 35;
+                if (sectionSet.has(i)) y += metrics.SECTION_H;
+                y += metrics.STEP;
             }
             return y;
         }
@@ -470,7 +479,7 @@ test('bar-click-opens-tooltip: clicking a visible bar shows the correct person',
             x: outerRect.left + Math.max(yx(p.b), LPAD) - outer.scrollLeft + 20,
             y: outerRect.top + rowY(idx) - outer.scrollTop + 15,
         };
-    }, maryIdx);
+    }, { idx: maryIdx, metrics });
 
     await page.evaluate(() => {
         document.getElementById('tip').style.display = 'none';
@@ -485,7 +494,9 @@ test('bar-click-opens-tooltip: clicking a visible bar shows the correct person',
 
 test('sequential-selection: consecutive drawer clicks keep navigator and drawer selection in sync', async ({ page }) => {
     for (const name of ['Salmon', 'Rahab', 'Boaz']) {
-        await page.locator('.all-drawer-item').filter({ hasText: name }).first().click();
+        const idx = await personIndex(page, name);
+        expect(idx).toBeGreaterThanOrEqual(0);
+        await page.locator(`.all-drawer-item[data-idx="${idx}"]`).click({ position: { x: 12, y: 12 } });
         await page.waitForTimeout(150);
 
         const activeName = await page.locator('.nav-item.active .nav-item-name').textContent();

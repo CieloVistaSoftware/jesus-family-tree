@@ -43,6 +43,8 @@ All notable changes to this project are documented in this file.
 
 ### Fixed
 
+- Restored explicit tooltip actions in desktop drawer mode: bar clicks and tooltip prev/next navigation now keep the inline tooltip usable while still syncing the drawer selection highlight.
+- Drawer row clicks are now more reliable because non-interactive copied tooltip content no longer steals pointer events from the row container.
 - Lamech bar (and any other mid-list person) now reliably scrolls into view when navigated to. Closes #1. Resolution chain: `cc0551f` (scroll bar into view), `7aaa57c` (top-align across panels), `7f4413a` (most-constrained anchor), `b20ff2e` (horizontal snap on scroll).
 - Selected nav-item no longer scrolls above its own viewport for top-of-dataset rows like Adam.
 - Active row's bar no longer drifts horizontally when scrolling vertically — it stays anchored at the left margin.
