@@ -30,6 +30,7 @@ All notable changes to this project are documented in this file.
 
 ### Changed
 
+- Keyboard `+` / `-` now adjust a shared content font scale across Navigator, Timeline, and right-side drawer columns; Ctrl/Cmd + `+` / `-` still control timeline zoom.
 - Toolbar cleanup: removed legacy Tour keyboard hooks and normalized toolbar control sizing around pan, zoom, and Open All controls.
 - Desktop load now auto-opens the right-side "All 77 people" drawer so the full list is immediately visible.
 - Two-column readability update: widened the left name column, added a Timeline header on the right column, and expanded Navigator row metadata to include year plus key identity info.

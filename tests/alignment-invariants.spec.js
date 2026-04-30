@@ -552,3 +552,44 @@ test('intro-note-auto-hide: instructional note disappears after 10 seconds', asy
     const display = await page.locator('.intro-note').evaluate(el => getComputedStyle(el).display);
     expect(display).toBe('none');
 });
+
+test('keyboard-font-scale: plus/minus changes shared font size across all three columns', async ({ page }) => {
+    await expect(page.locator('.all-drawer-title')).toBeVisible();
+
+    const readSizes = async () => page.evaluate(() => {
+        const navName = document.querySelector('.nav-item-name');
+        const chartHeader = document.getElementById('chart-panel-header');
+        const drawerTitle = document.querySelector('.all-drawer-title');
+        const layout = document.getElementById('app-layout');
+        return {
+            nav: navName ? parseFloat(getComputedStyle(navName).fontSize) : 0,
+            chart: chartHeader ? parseFloat(getComputedStyle(chartHeader).fontSize) : 0,
+            drawer: drawerTitle ? parseFloat(getComputedStyle(drawerTitle).fontSize) : 0,
+            scale: layout ? parseFloat(getComputedStyle(layout).getPropertyValue('--column-font-scale')) : 1,
+        };
+    });
+
+    const before = await readSizes();
+    await page.evaluate(() => {
+        const a = document.activeElement;
+        if (a && typeof a.blur === 'function') a.blur();
+    });
+
+    await page.keyboard.press('Shift+Equal'); // '+' on main keyboard
+    await page.waitForTimeout(100);
+    const afterPlus = await readSizes();
+
+    expect(afterPlus.nav).toBeGreaterThan(before.nav);
+    expect(afterPlus.chart).toBeGreaterThan(before.chart);
+    expect(afterPlus.drawer).toBeGreaterThan(before.drawer);
+    expect(afterPlus.scale).toBeGreaterThan(before.scale);
+
+    await page.keyboard.press('Minus');
+    await page.waitForTimeout(100);
+    const afterMinus = await readSizes();
+
+    expect(afterMinus.nav).toBeLessThan(afterPlus.nav);
+    expect(afterMinus.chart).toBeLessThan(afterPlus.chart);
+    expect(afterMinus.drawer).toBeLessThan(afterPlus.drawer);
+    expect(afterMinus.scale).toBeLessThan(afterPlus.scale);
+});
