@@ -443,8 +443,8 @@ test('tooltip-name-links: clicking a person link inside the tooltip navigates to
     await page.locator('#tip-note span.np').first().click();
     await page.waitForTimeout(150);
 
-    const tip = await tooltipState(page);
-    expect(tip.name).toContain(link.expected.split(' ')[0]);
+    // In drawer mode navTo keeps the tooltip hidden and syncs the drawer selection instead.
+    await expect(page.locator(`.all-drawer-item[data-idx="${link.idx}"]`)).toHaveClass(/selected/);
 });
 
 test('bar-click-opens-tooltip: clicking a visible bar shows the correct person', async ({ page }) => {
@@ -487,9 +487,8 @@ test('bar-click-opens-tooltip: clicking a visible bar shows the correct person',
     await page.mouse.click(coords.x, coords.y);
     await page.waitForTimeout(150);
 
-    const tip = await tooltipState(page);
-    expect(tip.display).toBe('block');
-    expect(tip.name).toContain('Mary');
+    // In drawer mode, bar clicks sync the drawer selection rather than showing a floating tooltip.
+    await expect(page.locator(`.all-drawer-item[data-idx="${maryIdx}"]`)).toHaveClass(/selected/);
 });
 
 test('sequential-selection: consecutive drawer clicks keep navigator and drawer selection in sync', async ({ page }) => {

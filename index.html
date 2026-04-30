@@ -16,8 +16,8 @@ main{padding:0 16px}
 .legend{display:flex;flex-wrap:wrap;gap:9px;margin:14px auto 6px;max-width:1100px;font-size:11px;color:#505568}
 .legend span{display:flex;align-items:center;gap:5px}
 .sw{width:10px;height:10px;border-radius:2px;flex-shrink:0}
-.pan-bar{display:flex;align-items:center;gap:10px;margin:6px auto 8px;max-width:1100px}
-.pan-hint{font-size:11px;color:#303648;flex:1}
+.pan-bar{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:6px auto 8px;max-width:1100px;width:100%}
+.pan-hint{font-size:11px;color:#303648;flex:1 1 320px;min-width:0}
 .pan-btn{background:#141828;border:1px solid #252d48;color:#5060a0;padding:0 16px;border-radius:6px;cursor:pointer;font-size:18px;line-height:1;transition:background .15s,color .15s;user-select:none;height:34px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
 .zoom-wrap{display:inline-flex;align-items:center;gap:5px;background:#101523;border:1px solid #252d48;border-radius:8px;padding:0 6px;white-space:nowrap;height:34px;box-sizing:border-box}
 .zoom-btn{background:#141828;border:1px solid #2a3458;color:#8ea8ff;padding:0 9px;border-radius:5px;cursor:pointer;font-size:13px;line-height:1;transition:background .15s,color .15s,border-color .15s;height:26px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
@@ -52,9 +52,9 @@ a.nc:hover{color:#a8f0c0;border-bottom-color:#a8f0c0}
 span.np{color:#FFD080;border-bottom:1px dotted rgba(255,208,128,.5);cursor:pointer}
 span.np:hover{color:#ffe0a0;border-bottom-color:#ffe0a0}
 #tip-ref{font-size:10px;color:#404868;margin-bottom:4px}
-#tip-ref-label{font-size:9px;color:#303850;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px}
+#tip-ref-label{font-size:9px;color:#5f6f98;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px}
 #tip-links{display:flex;flex-wrap:wrap;gap:5px}
-#tip-link-legend{margin-top:9px;padding-top:7px;border-top:1px solid #1a2030;font-size:9px;color:#303850;display:flex;gap:10px;flex-wrap:wrap}
+#tip-link-legend{margin-top:9px;padding-top:7px;border-top:1px solid #1a2030;font-size:9px;color:#7f8fb8;display:flex;gap:10px;flex-wrap:wrap}
 .tll{display:flex;align-items:center;gap:3px;white-space:nowrap}
 .tll-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 a.tl{display:inline-block;background:#141828;border:1px solid #2a3458;color:#6898ff;border-radius:5px;padding:3px 10px;font-size:10px;text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
@@ -1176,7 +1176,7 @@ window.navTo=function(idx){
 
   _navGuard=true;
 
-  gotoIdx(idx,true);
+  gotoIdx(idx, !_drawer);
   _navGuard=false;
 };
 // Expose internals for testing
@@ -1273,6 +1273,7 @@ function gotoIdx(idx,_showTip){
   navScrollTo(idx);
 
   if(!_showTip){
+    if(_drawer) tip.style.display='none';
     lastRow=idx;
     if(_drawer) _syncDrawerHighlight(idx);
     if(isMobile) mobNavUpdate(idx);
@@ -1400,13 +1401,11 @@ outer.addEventListener('scroll',function(){
 },{passive:true});
 
 window.addEventListener('load',function(){
-  setTimeout(function(){
-    selectedIdx=0; _scrollTipRow=0;
-    draw();
-    navScrollTo(0);
-    if(!isMobile) openAllCards();
-    updateThreeColumnSizes();
-  },100);
+  selectedIdx=0; _scrollTipRow=0;
+  draw();
+  navScrollTo(0, false);
+  if(!isMobile) openAllCards();
+  updateThreeColumnSizes();
   setTimeout(function(){
     const introNote=document.querySelector('.intro-note');
     if(introNote) introNote.style.display='none';
@@ -1438,20 +1437,29 @@ cvs.addEventListener('click',e=>{
   const rect=cvs.getBoundingClientRect();
   const nameRow=findNameLabel(e.clientX,e.clientY,rect);
   if(nameRow>=0){
-    if(nameRow===selectedIdx){ selectedIdx=-1; draw(); hideTip(); navScrollTo(-1); }
-    else gotoIdx(nameRow,true);
+    if(nameRow===selectedIdx){
+      if(_drawer){
+        gotoIdx(nameRow, false);
+      } else {
+        selectedIdx=-1; draw(); hideTip(); navScrollTo(-1);
+        if(_drawer) _syncDrawerHighlight(-1, false);
+      }
+    } else {
+      gotoIdx(nameRow, !_drawer);
+    }
     return;
   }
   const row=findRow(e.clientX,e.clientY,rect);
   if(row>=0){
     if(row===selectedIdx){
-      if(tip.style.display==='block' && visibleTipRow===row){
-        selectedIdx=-1; draw(); hideTip(); navScrollTo(-1);
+      if(_drawer){
+        gotoIdx(row, false);
       } else {
-        showTipInPlace(row);
+        selectedIdx=-1; draw(); hideTip(); navScrollTo(-1);
+        if(_drawer) _syncDrawerHighlight(-1, false);
       }
     } else {
-      gotoIdx(row,true);
+      gotoIdx(row, !_drawer);
     }
   } else {
     // Empty canvas click — close and deselect
@@ -1520,11 +1528,19 @@ function saveChartColWidth(px){
   }
 }
 
+function getDrawerReservedWidth(){
+  if(!_drawer) return 0;
+  const drawerRectW=_drawer.getBoundingClientRect().width;
+  const drawerCssW=parseFloat(getComputedStyle(_drawer).width)||0;
+  const drawerMin=parseFloat(getComputedStyle(_drawer).minWidth)||0;
+  return Math.max(drawerRectW, drawerCssW, drawerMin);
+}
+
 function getMaxChartColWidth(){
   const resizerW=colResizer.getBoundingClientRect().width||10;
   const navW=navPanel.getBoundingClientRect().width;
-  const drawerMin=_drawer?((parseFloat(getComputedStyle(_drawer).minWidth)||340)):0;
-  return Math.max(remPx(1),appLayout.clientWidth-navW-resizerW-drawerMin);
+  const drawerReservedW=getDrawerReservedWidth();
+  return Math.max(remPx(1),appLayout.clientWidth-navW-resizerW-drawerReservedW);
 }
 
 function setChartColWidth(nextPx){
@@ -1660,9 +1676,8 @@ function _syncDrawerHighlight(idx, smooth){
   }
 }
 
-// "Open All" button is redundant in always-on three-column mode. Hide it on
-// every viewport — the drawer auto-opens for desktop and stays out of the way
-// on mobile via @media display:none.
+// "Open All" button is redundant in the current desktop layout. Hide it while
+// desktop auto-opens the drawer; mobile falls back to the inline tooltip flow.
 const openAllBtnEl=document.getElementById('open-all-btn');
 if(openAllBtnEl) openAllBtnEl.style.display='none';
 

@@ -19,6 +19,8 @@ All notable changes to this project are documented in this file.
 ## [Unreleased]
 
 ### Added
+- Drawer-mode chart and inline navigation now consistently keep the floating tooltip hidden while preserving the active drawer and navigator selection.
+- Desktop and tablet resize flow no longer produce page-level horizontal overflow when the right-side drawer is open.
 
 - Regression test baseline using Playwright (`tests/alignment-invariants.spec.js`). Five tests cover the core alignment invariants: `alignment-y` (clicked nav row top equals shared screen Y), `no-clip-at-top` (top-of-dataset row stays inside nav-list viewport), `bar-1rem-from-left` (selected bar sits ~REM from chart-outer left edge), `row-wide-click` (clicking empty area to right of short bar selects that row), `scroll-snap` (vertical scroll snaps active bar to 1rem from left). Run with `npm test`. Closes #2.
 - Right-side drawer list as the new "Open All" UX, replacing the spatial card stack. Drawer is scrollable, search-friendly, and per-item click jumps the chart to that person.
@@ -43,7 +45,7 @@ All notable changes to this project are documented in this file.
 
 ### Fixed
 
-- Restored explicit tooltip actions in desktop drawer mode: bar clicks and tooltip prev/next navigation now keep the inline tooltip usable while still syncing the drawer selection highlight.
+- Desktop detail is drawer-only again: chart clicks and inline navigation no longer open a floating card in the main timeline area while the right-side drawer is present.
 - Drawer row clicks are now more reliable because non-interactive copied tooltip content no longer steals pointer events from the row container.
 - Lamech bar (and any other mid-list person) now reliably scrolls into view when navigated to. Closes #1. Resolution chain: `cc0551f` (scroll bar into view), `7aaa57c` (top-align across panels), `7f4413a` (most-constrained anchor), `b20ff2e` (horizontal snap on scroll).
 - Selected nav-item no longer scrolls above its own viewport for top-of-dataset rows like Adam.
