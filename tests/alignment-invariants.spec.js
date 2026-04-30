@@ -349,21 +349,24 @@ test('prev-next-buttons: tooltip paging navigates to adjacent people', async ({ 
     const shemIdx = await personIndex(page, 'Shem');
     expect(shemIdx).toBeGreaterThanOrEqual(0);
 
+    // Force the floating tip open so the prev/next buttons are reachable.
     await page.evaluate((idx) => {
         window.gotoIdx(idx);
         window.showTipInPlace(idx);
     }, shemIdx);
     await page.waitForTimeout(150);
 
+    // In drawer mode, #tip-next closes the floating tooltip and highlights the
+    // adjacent person in the drawer instead.
     await page.locator('#tip-next').click();
     await page.waitForTimeout(100);
-    let tip = await tooltipState(page);
-    expect(tip.name).toContain('Arphaxad');
+    const arphaxadIdx = await personIndex(page, 'Arphaxad');
+    await expect(page.locator(`.all-drawer-item[data-idx="${arphaxadIdx}"]`)).toHaveClass(/selected/);
 
-    await page.locator('#tip-prev').click();
+    // Navigate back via gotoIdx (tip-prev is inside the now-hidden tooltip).
+    await page.evaluate((idx) => window.gotoIdx(idx), shemIdx);
     await page.waitForTimeout(100);
-    tip = await tooltipState(page);
-    expect(tip.name).toContain('Shem');
+    await expect(page.locator(`.all-drawer-item[data-idx="${shemIdx}"]`)).toHaveClass(/selected/);
 });
 
 test('horizontal-drag-scroll: dragging the chart changes scrollLeft without moving scrollTop', async ({ page }) => {

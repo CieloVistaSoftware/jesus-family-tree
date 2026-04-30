@@ -1272,7 +1272,7 @@ function gotoIdx(idx,_showTip){
   draw();
   navScrollTo(idx);
 
-  if(!_showTip){
+  if(!_showTip || _drawer){
     if(_drawer) tip.style.display='none';
     lastRow=idx;
     if(_drawer) _syncDrawerHighlight(idx);

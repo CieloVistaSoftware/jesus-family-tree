@@ -45,6 +45,7 @@ All notable changes to this project are documented in this file.
 
 ### Fixed
 
+- Floating tooltip card never appears while the right-side drawer is open — `gotoIdx` now suppresses the tooltip unconditionally when the drawer is present, regardless of the `_showTip` flag. Fixes tip-next/tip-prev, arrow-key nav, and any other path that previously forced the tooltip visible in drawer mode.
 - Desktop detail is drawer-only again: chart clicks and inline navigation no longer open a floating card in the main timeline area while the right-side drawer is present.
 - Drawer row clicks are now more reliable because non-interactive copied tooltip content no longer steals pointer events from the row container.
 - Lamech bar (and any other mid-list person) now reliably scrolls into view when navigated to. Closes #1. Resolution chain: `cc0551f` (scroll bar into view), `7aaa57c` (top-align across panels), `7f4413a` (most-constrained anchor), `b20ff2e` (horizontal snap on scroll).
