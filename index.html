@@ -73,7 +73,7 @@ footer{text-align:center;margin-top:36px;padding:18px;border-top:1px solid #1418
 .mob-nav-btn:active{background:#1e2840;}
 #mob-nav-name{flex:1;text-align:center;font-size:12px;color:#d4d6e0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #mob-nav-era{font-size:10px;color:#505878;}
-.all-drawer{width:380px;min-width:1rem;flex-shrink:0;overflow:hidden;background:#0a0d18;border-left:1px solid #1a2030;display:flex;flex-direction:column;height:calc(100vh - 180px)}
+.all-drawer{flex:1 0 380px;min-width:280px;overflow:hidden;background:#0a0d18;border-left:1px solid #1a2030;display:flex;flex-direction:column;height:calc(100vh - 180px)}
 @media(max-width:768px){.all-drawer{display:none}}
 .all-drawer-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #252d48;background:#0c0f1c;flex-shrink:0;gap:10px;min-width:0}
 .all-drawer-title{font-size:calc(12px * var(--column-font-scale,1));font-weight:700;color:#f5ecd4;letter-spacing:.02em;flex:1;line-height:1.4;min-width:0;overflow:hidden}
@@ -945,8 +945,8 @@ outer.addEventListener('wheel',e=>{
   if(!_sRaf) _sRaf=requestAnimationFrame(_animScroll);
 },{passive:false});
 
-document.getElementById('zoom-in').addEventListener('click',()=>applyZoom(zoom*1.15));
-document.getElementById('zoom-out').addEventListener('click',()=>applyZoom(zoom/1.15));
+document.getElementById('zoom-in').addEventListener('click',()=>applyColumnFontScale(columnFontScale+FONT_SCALE_STEP));
+document.getElementById('zoom-out').addEventListener('click',()=>applyColumnFontScale(columnFontScale-FONT_SCALE_STEP));
 document.getElementById('zoom-reset').addEventListener('click',()=>applyZoom(1));
 
 // Returns row index for any click within the row's Y band (below the year-axis
@@ -1173,6 +1173,7 @@ function noteToHtml(rawText, selfIdx){
 
 // ── showTipInPlace: click handler — tooltip at bar's CURRENT screen position, no scroll ─────────
 function showTipInPlace(idx){
+  if(_drawer) return;
   idx = Math.max(0, Math.min(people.length-1, idx));
   const p   = people[idx];
   const REM = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
@@ -1233,6 +1234,7 @@ window.navTo=function(idx){
 // Expose internals for testing
 window.gotoIdx        = gotoIdx;
 window.showTipInPlace = showTipInPlace;
+window.closeAllCards  = closeAllCards;
 window.navScrollTo    = navScrollTo;
 window.getPeople      = ()=>people;
 window.getChartMetrics = ()=>({
@@ -1399,6 +1401,7 @@ let _suppressScrollListener=false; // test hook only
 
 function openScrollTip(idx){
   idx=Math.max(0,Math.min(people.length-1,idx));
+  if(_drawer){ _scrollTipRow=idx; selectedIdx=idx; draw(); _syncDrawerHighlight(idx); return; }
   if(idx===_scrollTipRow && tip.style.display==='block') return;
   _scrollTipRow=idx;
   selectedIdx=idx;

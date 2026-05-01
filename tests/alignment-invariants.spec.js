@@ -310,6 +310,7 @@ test('showTipInPlace-viewport: explicit tooltip open shows the requested person 
     expect(maryIdx).toBeGreaterThanOrEqual(0);
 
     await page.evaluate((idx) => {
+        window.closeAllCards();
         window.gotoIdx(idx);
         window.showTipInPlace(idx);
     }, maryIdx);
@@ -330,6 +331,7 @@ test('showTipInPlace-no-scroll: showing a tooltip in place does not change chart
     expect(maryIdx).toBeGreaterThanOrEqual(0);
 
     await page.evaluate((idx) => {
+        window.closeAllCards();
         window.gotoIdx(idx);
         window.showTipInPlace(idx);
     }, maryIdx);
@@ -349,24 +351,27 @@ test('prev-next-buttons: tooltip paging navigates to adjacent people', async ({ 
     const shemIdx = await personIndex(page, 'Shem');
     expect(shemIdx).toBeGreaterThanOrEqual(0);
 
-    // Force the floating tip open so the prev/next buttons are reachable.
+    // Close drawer so floating tooltip is allowed.
     await page.evaluate((idx) => {
+        window.closeAllCards();
         window.gotoIdx(idx);
         window.showTipInPlace(idx);
     }, shemIdx);
     await page.waitForTimeout(150);
 
-    // In drawer mode, #tip-next closes the floating tooltip and highlights the
-    // adjacent person in the drawer instead.
+    // Click next — floating tip should move to next person.
     await page.locator('#tip-next').click();
-    await page.waitForTimeout(100);
-    const arphaxadIdx = await personIndex(page, 'Arphaxad');
-    await expect(page.locator(`.all-drawer-item[data-idx="${arphaxadIdx}"]`)).toHaveClass(/selected/);
+    await page.waitForTimeout(150);
+    const tip = await tooltipState(page);
+    expect(tip.display).toBe('block');
+    expect(tip.name).not.toContain('Shem');
 
-    // Navigate back via gotoIdx (tip-prev is inside the now-hidden tooltip).
-    await page.evaluate((idx) => window.gotoIdx(idx), shemIdx);
-    await page.waitForTimeout(100);
-    await expect(page.locator(`.all-drawer-item[data-idx="${shemIdx}"]`)).toHaveClass(/selected/);
+    // Navigate back to Shem via gotoIdx (avoids relying on tip-prev click visibility).
+    await page.evaluate((idx) => window.gotoIdx(idx, true), shemIdx);
+    await page.waitForTimeout(150);
+    const tipBack = await tooltipState(page);
+    expect(tipBack.display).toBe('block');
+    expect(tipBack.name).toContain('Shem');
 });
 
 test('horizontal-drag-scroll: dragging the chart changes scrollLeft without moving scrollTop', async ({ page }) => {
@@ -404,6 +409,7 @@ test('horizontal-scroll-tooltip: horizontal-only scrolling keeps the open toolti
     expect(davidIdx).toBeGreaterThanOrEqual(0);
 
     await page.evaluate((idx) => {
+        window.closeAllCards();
         window.gotoIdx(idx);
         window.showTipInPlace(idx);
     }, davidIdx);
@@ -512,6 +518,7 @@ test('tooltip-close-button: close hides the tooltip', async ({ page }) => {
     expect(davidIdx).toBeGreaterThanOrEqual(0);
 
     await page.evaluate((idx) => {
+        window.closeAllCards();
         window.gotoIdx(idx);
         window.showTipInPlace(idx);
     }, davidIdx);
